@@ -1,0 +1,2775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灵犀小助手 - 意图引擎教学演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 左侧：意图引擎处理步骤 */
+        .left-panel {
+            width: 33.33%;
+            background-color: #f0f2f5;
+            border-right: 1px solid #e8e8e8;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        /* 中间：六步走处理结果 */
+        .middle-panel {
+            width: 33.33%;
+            background-color: #f8f9fa;
+            border-right: 1px solid #e8e8e8;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .pipeline-step {
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .pipeline-step-header {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1890ff;
+        }
+        
+        .pipeline-step-content {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        /* 左右布局的step内容 */
+        .pipeline-step-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        
+        .pipeline-step-label {
+            width: 140px;
+            min-width: 140px;
+            font-weight: bold;
+            color: #333;
+            padding-right: 10px;
+        }
+        
+        .pipeline-step-value {
+            flex: 1;
+            color: #555;
+            word-break: break-word;
+        }
+        
+        .panel-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .step-container {
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .step-header {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1890ff;
+        }
+        
+        .step-content {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .json-content {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-x: auto;
+            margin-top: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .json-key {
+            color: #0000ff;
+        }
+        
+        .json-string {
+            color: #008000;
+        }
+        
+        .json-number {
+            color: #ff0000;
+        }
+        
+        .json-boolean {
+            color: #800080;
+        }
+        
+        .json-null {
+            color: #808080;
+        }
+        
+        /* 右侧：灵犀对话窗口 */
+        .right-panel {
+            flex: 1;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-header {
+            background-color: #1890ff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .chat-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: #1890ff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot-message {
+            align-self: flex-start;
+            background-color: #f0f0f0;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-content {
+            margin-bottom: 5px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            opacity: 0.6;
+            text-align: right;
+        }
+        
+        .input-container {
+            padding: 10px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-box {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e8e8e8;
+            border-radius: 20px;
+            outline: none;
+            resize: none;
+            font-size: 14px;
+        }
+        
+        .send-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+        }
+        
+        .send-button:hover {
+            background-color: #40a9ff;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #1890ff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ==================== LUI卡片样式 ==================== */
+        
+        /* 存款卡片样式 */
+        .deposit-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .deposit-card-header {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .deposit-card-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .deposit-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .deposit-item:last-child {
+            border-bottom: none;
+        }
+        
+        .deposit-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .deposit-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .deposit-highlight {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .deposit-highlight-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .deposit-highlight-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        /* 贷款卡片样式 */
+        .loan-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+        }
+        
+        .loan-card-header {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .loan-card-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .loan-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .loan-item:last-child {
+            border-bottom: none;
+        }
+        
+        .loan-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .loan-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .loan-highlight {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .loan-highlight-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .loan-highlight-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        /* 追问卡片样式 */
+        .clarify-card {
+            background: white;
+            border: 2px solid #1890ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(24, 144, 255, 0.1);
+        }
+        
+        .clarify-header {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1890ff;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .clarify-nlg {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .clarify-slot {
+            margin-bottom: 15px;
+        }
+        
+        .clarify-slot-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .clarify-slot-required {
+            color: #ff4d4f;
+        }
+        
+        .clarify-slot-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .clarify-slot-input:focus {
+            border-color: #1890ff;
+        }
+        
+        .clarify-slot-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            background-color: white;
+        }
+        
+        .clarify-submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .clarify-submit-btn:hover {
+            background-color: #40a9ff;
+        }
+        
+        .clarify-status-filled {
+            background-color: #f6ffed;
+            border-color: #b7eb8f;
+        }
+        
+        .clarify-status-missing {
+            background-color: #fff2f0;
+            border-color: #ffccc7;
+        }
+        
+        /* 接口调试样式 */
+        .debug-button-container {
+            padding: 10px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .debug-toggle-button {
+            background-color: #52c41a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .debug-toggle-button:hover {
+            background-color: #73d13d;
+        }
+        
+        .stop-button {
+            background-color: #ff4d4f;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .stop-button:hover {
+            background-color: #ff7875;
+        }
+        
+        .stop-button:disabled {
+            background-color: #d9d9d9;
+            cursor: not-allowed;
+        }
+        
+        .skill-buttons-panel {
+            display: none;
+            padding: 10px;
+            border-top: 1px solid #e8e8e8;
+            background-color: #fafafa;
+        }
+        
+        .skill-buttons-panel.show {
+            display: block;
+        }
+        
+        .skill-button {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            background-color: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        
+        .skill-button:hover {
+            border-color: #1890ff;
+            background-color: #e6f7ff;
+        }
+        
+        .skill-button-icon {
+            margin-right: 8px;
+        }
+        
+        /* 弹框样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal {
+            background-color: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .modal-input-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        
+        .modal-input:focus {
+            border-color: #1890ff;
+        }
+        
+        .company-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1001;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .company-suggestions.show {
+            display: block;
+        }
+        
+        .company-suggestion-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .company-suggestion-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-button-cancel {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .modal-button-cancel:hover {
+            background-color: #e8e8e8;
+        }
+        
+        .modal-button-confirm {
+            background-color: #1890ff;
+            color: white;
+        }
+        
+        .modal-button-confirm:hover {
+            background-color: #40a9ff;
+        }
+        
+        /* 文件下载卡片 */
+        .file-card {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+            text-align: center;
+        }
+        
+        .file-card-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .file-card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .file-card-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        /* 好客推荐卡片样式 */
+        .recommend-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .recommend-card-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .recommend-card-header h2 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .recommend-card-header p {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .company-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .company-card-header {
+            margin-bottom: 12px;
+        }
+        
+        .company-card-header h3 {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .company-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .company-tag {
+            background-color: #e6f7ff;
+            color: #1890ff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .company-card-content {
+            margin-bottom: 15px;
+        }
+        
+        .company-info {
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .company-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .company-reasons {
+            margin-top: 10px;
+        }
+        
+        .company-reasons strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .company-reasons ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #666;
+        }
+        
+        .company-reasons li {
+            margin: 4px 0;
+        }
+        
+        .company-card-footer {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .company-detail-btn,
+        .company-contact-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .company-detail-btn:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        
+        .company-contact-btn {
+            background-color: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .company-contact-btn:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        /* 客户卡片样式 */
+        .customer-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 10px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .customer-card-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .customer-card-header h2 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .customer-card-tags {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .customer-card-tag {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .customer-card-tag-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .customer-card-tag-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .customer-card-tag-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .customer-card-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .customer-card-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .customer-card-info-label {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .customer-card-info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .customer-card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .customer-card-action-section-title {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .customer-card-action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .customer-card-action-btn {
+            padding: 12px 8px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .customer-card-action-btn:hover {
+            border-color: #1890ff;
+            background: #e6f7ff;
+            color: #1890ff;
+        }
+        
+        .customer-card-action-btn-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧：灵犀智能体处理步骤 -->
+        <div class="left-panel">
+            <div class="panel-header">灵犀智能体处理步骤</div>
+            <div id="stepsContainer">
+                <div class="step-container">
+                    <div class="step-header">系统初始化</div>
+                    <div class="step-content">
+                        意图引擎已就绪，等待用户输入...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 中间：意图引擎处理步骤 -->
+        <div class="middle-panel">
+            <div class="panel-header">意图引擎处理步骤</div>
+            <div id="pipelineContainer">
+                <div class="pipeline-step">
+                    <div class="pipeline-step-header">Step 1: 安全围栏</div>
+                    <div class="pipeline-step-content" id="step1Content">
+                        等待处理...
+                    </div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="pipeline-step-header">Step 2: 上下文加载</div>
+                    <div class="pipeline-step-content" id="step2Content">
+                        等待处理...
+                    </div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="pipeline-step-header">Step 3: 实体提取</div>
+                    <div class="pipeline-step-content" id="step3Content">
+                        等待处理...
+                    </div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="pipeline-step-header">Step 4: 意图识别</div>
+                    <div class="pipeline-step-content" id="step4Content">
+                        等待处理...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧：灵犀对话窗口 -->
+        <div class="right-panel">
+            <div class="app-header">灵犀小助手</div>
+            
+            <div class="chat-container" id="chatContainer">
+                <div class="message bot-message">
+                    <div class="message-content">您好！我是灵犀小助手，有什么可以帮您的吗？</div>
+                    <div class="message-time">10:00</div>
+                </div>
+            </div>
+            
+            <!-- 快捷对话气泡 -->
+            <div class="quick-bubbles" style="padding: 10px; border-top: 1px solid #e8e8e8; border-bottom: 1px solid #e8e8e8; display: flex; flex-wrap: wrap; gap: 8px; background-color: #fafafa;">
+                <button class="quick-bubble" style="padding: 8px 12px; background-color: #e6f7ff; border: 1px solid #91d5ff; border-radius: 16px; font-size: 13px; cursor: pointer; transition: all 0.3s;">查比亚迪的存款</button>
+                <button class="quick-bubble" style="padding: 8px 12px; background-color: #e6f7ff; border: 1px solid #91d5ff; border-radius: 16px; font-size: 13px; cursor: pointer; transition: all 0.3s;">查通用电气的贷款</button>
+                <button class="quick-bubble" style="padding: 8px 12px; background-color: #e6f7ff; border: 1px solid #91d5ff; border-radius: 16px; font-size: 13px; cursor: pointer; transition: all 0.3s;">申瑞生物的访前一页纸</button>
+                <button class="quick-bubble" style="padding: 8px 12px; background-color: #e6f7ff; border: 1px solid #91d5ff; border-radius: 16px; font-size: 13px; cursor: pointer; transition: all 0.3s;">他的贷款呢？</button>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" class="input-box" id="userInput" placeholder="请输入您的问题...">
+                <button class="send-button" id="sendButton">发送</button>
+            </div>
+            
+            <!-- 接口调试按钮 -->
+            <div class="debug-button-container">
+                <button class="debug-toggle-button" id="debugToggleButton">
+                    🔧 接口调试
+                </button>
+                <button class="stop-button" id="stopButton" disabled>
+                    ⏹ 停止
+                </button>
+            </div>
+            
+            <!-- 技能按钮面板 -->
+            <div class="skill-buttons-panel" id="skillButtonsPanel">
+                <button class="skill-button" id="queryDepositButton">
+                    <span class="skill-button-icon">💰</span>
+                    查询存款 (SKILL_DEPOSIT_V1)
+                </button>
+                <button class="skill-button" id="queryLoanButton">
+                    <span class="skill-button-icon">💳</span>
+                    查询贷款 (SKILL_LOAN_V1)
+                </button>
+                <button class="skill-button" id="querySettlementButton">
+                    <span class="skill-button-icon">📊</span>
+                    查询结算分 (SKILL_SETTLEMENT_QUERY_V1)
+                </button>
+                <button class="skill-button" id="getVisitReportButton">
+                    <span class="skill-button-icon">📄</span>
+                    获取访前一页纸 (SKILL_VISIT_REPORT_V1)
+                </button>
+                <button class="skill-button" id="recommendCompaniesButton">
+                    <span class="skill-button-icon">🏢</span>
+                    好客推荐 (SKILL_COMPANY_RECOMMEND_V1)
+                </button>
+                <button class="skill-button" id="customerCardButton">
+                    <span class="skill-button-icon">📇</span>
+                    客户卡片 (SKILL_CUSTOMER_CARD_V1)
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 企业信息输入弹框 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header" id="modalHeader">请输入企业名称</div>
+            <div class="modal-input-container">
+                <input type="text" class="modal-input" id="companyInput" placeholder="请输入企业名称...">
+                <div class="company-suggestions" id="companySuggestions"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-cancel" id="cancelButton">取消</button>
+                <button class="modal-button modal-button-confirm" id="confirmButton">提交</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const stepsContainer = document.getElementById('stepsContainer');
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        
+        // 接口调试相关元素
+        const debugToggleButton = document.getElementById('debugToggleButton');
+        const stopButton = document.getElementById('stopButton');
+        const skillButtonsPanel = document.getElementById('skillButtonsPanel');
+        const queryDepositButton = document.getElementById('queryDepositButton');
+        const queryLoanButton = document.getElementById('queryLoanButton');
+        const querySettlementButton = document.getElementById('querySettlementButton');
+        const getVisitReportButton = document.getElementById('getVisitReportButton');
+        const recommendCompaniesButton = document.getElementById('recommendCompaniesButton');
+        
+        // 弹框相关元素
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalHeader = document.getElementById('modalHeader');
+        const companyInput = document.getElementById('companyInput');
+        const companySuggestions = document.getElementById('companySuggestions');
+        const cancelButton = document.getElementById('cancelButton');
+        const confirmButton = document.getElementById('confirmButton');
+        
+        // 当前选择的技能
+        let currentSkill = null;
+        let currentAbortController = null;
+        
+        // 技能表 - 记录灵犀的技能清单及其对应的接口
+        const skillTable = {
+            "SKILL_DEPOSIT_QUERY_V1": {
+                name: "查询存款",
+                apiEndpoint: "/api/deposit/query",
+                uiComponent: "DEPOSIT_CARD"
+            },
+            "SKILL_LOAN_QUERY_V1": {
+                name: "查询贷款",
+                apiEndpoint: "/api/loan/query",
+                uiComponent: "LOAN_CARD"
+            },
+            "SKILL_SETTLEMENT_QUERY_V1": {
+                name: "查询结算分",
+                apiEndpoint: "/api/settlement/query",
+                uiComponent: "SETTLEMENT_CARD"
+            },
+            "SKILL_VISIT_REPORT_V1": {
+                name: "获取访前一页纸",
+                apiEndpoint: "/api/visit-report/download",
+                uiComponent: "VISIT_REPORT"
+            },
+            "SKILL_COMPANY_RECOMMEND_V1": {
+                name: "好客推荐",
+                apiEndpoint: "/api/recommend/companies",
+                uiComponent: "COMPANY_RECOMMEND_CARD"
+            },
+            "SKILL_CUSTOMER_CARD_V1": {
+                name: "客户卡片",
+                apiEndpoint: "/api/customer/card",
+                uiComponent: "CUSTOMER_CARD"
+            }
+        };
+        
+        // ==================== 快捷对话气泡功能 ====================
+        
+        // 为快捷对话气泡添加点击事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickBubbles = document.querySelectorAll('.quick-bubble');
+            quickBubbles.forEach(bubble => {
+                bubble.addEventListener('click', function() {
+                    const message = this.textContent.trim();
+                    sendQuickMessage(message);
+                });
+            });
+        });
+        
+        // 发送快捷消息
+        function sendQuickMessage(message) {
+            // 将消息内容设置到输入框
+            userInput.value = message;
+            
+            // 模拟发送按钮点击
+            sendButton.click();
+        }
+        
+        // ==================== 接口调试功能 ====================
+        
+        // 切换技能按钮面板显示
+        debugToggleButton.addEventListener('click', function() {
+            skillButtonsPanel.classList.toggle('show');
+        });
+        
+        // 停止按钮点击
+        stopButton.addEventListener('click', function() {
+            if (currentAbortController) {
+                currentAbortController.abort();
+                currentAbortController = null;
+                stopButton.disabled = true;
+                removeLoading();
+                addMessage('请求已停止', false);
+            }
+        });
+        
+        // 查询存款按钮点击
+        queryDepositButton.addEventListener('click', function() {
+            currentSkill = 'deposit';
+            modalHeader.textContent = '查询企业存款';
+            showModal();
+        });
+        
+        // 查询贷款按钮点击
+        queryLoanButton.addEventListener('click', function() {
+            currentSkill = 'loan';
+            modalHeader.textContent = '查询企业贷款';
+            showModal();
+        });
+        
+        // 查询结算分按钮点击
+        querySettlementButton.addEventListener('click', function() {
+            currentSkill = 'settlement';
+            modalHeader.textContent = '查询企业结算分';
+            showModal();
+        });
+        
+        // 获取访前一页纸按钮点击
+        getVisitReportButton.addEventListener('click', function() {
+            currentSkill = 'visit-report';
+            modalHeader.textContent = '获取访前一页纸';
+            showModal();
+        });
+        
+        // 好客推荐按钮点击
+        recommendCompaniesButton.addEventListener('click', async function() {
+            currentSkill = 'company-recommend';
+            
+            // 直接执行推荐，不需要企业名称
+            addMessage('好客推荐', true);
+            addLoading();
+            stopButton.disabled = false;
+            
+            try {
+                await recommendCompanies();
+            } catch (error) {
+                console.error('推荐企业错误:', error);
+                if (error.name !== 'AbortError') {
+                    removeLoading();
+                    stopButton.disabled = true;
+                    addMessage(`错误：${error.message}`);
+                }
+            }
+        });
+        
+        // 客户卡片按钮点击
+        customerCardButton.addEventListener('click', function() {
+            currentSkill = 'customer-card';
+            modalHeader.textContent = '查看企业客户卡片';
+            showModal();
+        });
+        
+        // 显示弹框
+        function showModal() {
+            modalOverlay.classList.add('show');
+            companyInput.value = '';
+            companySuggestions.innerHTML = '';
+            companySuggestions.classList.remove('show');
+            companyInput.focus();
+        }
+        
+        // 隐藏弹框
+        function hideModal() {
+            modalOverlay.classList.remove('show');
+            currentSkill = null;
+        }
+        
+        // 取消按钮
+        cancelButton.addEventListener('click', hideModal);
+        
+        // 点击弹框背景关闭
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                hideModal();
+            }
+        });
+        
+        // 企业名称输入 - 模糊匹配
+        let debounceTimer = null;
+        companyInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const keyword = this.value.trim();
+            
+            if (keyword.length < 1) {
+                companySuggestions.classList.remove('show');
+                return;
+            }
+            
+            debounceTimer = setTimeout(async function() {
+                try {
+                    const response = await fetch(`http://localhost:8000/api/companies?keyword=${encodeURIComponent(keyword)}`);
+                    const result = await response.json();
+                    
+                    if (result.code === 200 && result.data.length > 0) {
+                        renderCompanySuggestions(result.data);
+                    } else {
+                        companySuggestions.innerHTML = '<div class="company-suggestion-item" style="color: #999;">未找到匹配的企业</div>';
+                        companySuggestions.classList.add('show');
+                    }
+                } catch (error) {
+                    console.error('搜索企业失败:', error);
+                }
+            }, 300);
+        });
+        
+        // 渲染企业建议列表
+        function renderCompanySuggestions(companies) {
+            companySuggestions.innerHTML = '';
+            
+            companies.forEach(company => {
+                const item = document.createElement('div');
+                item.className = 'company-suggestion-item';
+                item.textContent = company.name;
+                item.addEventListener('click', function() {
+                    companyInput.value = company.name;
+                    companySuggestions.classList.remove('show');
+                });
+                companySuggestions.appendChild(item);
+            });
+            
+            companySuggestions.classList.add('show');
+        }
+        
+        // 点击外部关闭建议列表
+        document.addEventListener('click', function(e) {
+            if (!companyInput.contains(e.target) && !companySuggestions.contains(e.target)) {
+                companySuggestions.classList.remove('show');
+            }
+        });
+        
+        // 提交按钮
+        confirmButton.addEventListener('click', async function() {
+            const companyName = companyInput.value.trim();
+            if (!companyName) {
+                alert('请输入企业名称');
+                return;
+            }
+            
+            // 先保存当前技能，再隐藏弹框
+            const skillToExecute = currentSkill;
+            console.log('准备执行技能:', skillToExecute, '企业名称:', companyName);
+            
+            hideModal();
+            
+            // 在聊天窗口显示用户请求
+            let userMessage = '';
+            if (skillToExecute === 'deposit') {
+                userMessage = `查询 ${companyName} 的存款`;
+            } else if (skillToExecute === 'loan') {
+                userMessage = `查询 ${companyName} 的贷款`;
+            } else if (skillToExecute === 'settlement') {
+                userMessage = `查询 ${companyName} 的结算分`;
+            } else if (skillToExecute === 'visit-report') {
+                userMessage = `获取 ${companyName} 的访前一页纸`;
+            } else if (skillToExecute === 'customer-card') {
+                userMessage = `查看 ${companyName} 的客户卡片`;
+            }
+            console.log('添加用户消息:', userMessage);
+            addMessage(userMessage, true);
+            
+            // 强制滚动到底部
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 添加加载状态
+            addLoading();
+            stopButton.disabled = false;
+            
+            try {
+                if (skillToExecute === 'deposit') {
+                    await queryDeposit(companyName);
+                } else if (skillToExecute === 'loan') {
+                    await queryLoan(companyName);
+                } else if (skillToExecute === 'settlement') {
+                    await querySettlement(companyName);
+                } else if (skillToExecute === 'visit-report') {
+                    await downloadVisitReport(companyName);
+                } else if (skillToExecute === 'customer-card') {
+                    await queryCustomerCard(companyName);
+                } else {
+                    console.error('未知的技能类型:', skillToExecute);
+                    removeLoading();
+                    addMessage('错误：未知的操作类型');
+                }
+            } catch (error) {
+                console.error('请求错误:', error);
+                if (error.name !== 'AbortError') {
+                    removeLoading();
+                    addMessage(`错误：${error.message}`);
+                }
+                stopButton.disabled = true;
+            }
+        });
+        
+        // 查询存款
+        async function queryDeposit(companyName) {
+            console.log('开始查询存款，企业名称:', companyName);
+            currentAbortController = new AbortController();
+            
+            try {
+                updateLoading('步骤1/5: 准备请求数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const controller = currentAbortController;
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                updateLoading('步骤2/5: 发送请求到服务器...');
+                const response = await fetch('http://localhost:8000/api/deposit/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ company_name: companyName }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('存款查询响应状态:', response.status);
+                updateLoading('步骤3/5: 接收服务器响应...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const result = await response.json();
+                console.log('存款查询结果:', result);
+                updateLoading('步骤4/5: 解析响应数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                updateLoading('步骤5/5: 渲染结果...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                removeLoading();
+                stopButton.disabled = true;
+                
+                if (result.code === 200) {
+                    const cardHtml = renderSimpleDepositCard(result.data);
+                    addCardToChat(cardHtml);
+                } else {
+                    addMessage(result.message || '查询失败');
+                }
+            } catch (error) {
+                console.error('存款查询错误:', error);
+                if (error.name !== 'AbortError') {
+                    removeLoading();
+                    stopButton.disabled = true;
+                    addMessage(`查询失败：${error.message}`);
+                }
+                throw error;
+            }
+        }
+        
+        // 查询贷款
+        async function queryLoan(companyName) {
+            console.log('开始查询贷款，企业名称:', companyName);
+            currentAbortController = new AbortController();
+            
+            try {
+                updateLoading('步骤1/5: 准备请求数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const controller = currentAbortController;
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                updateLoading('步骤2/5: 发送请求到服务器...');
+                const response = await fetch('http://localhost:8000/api/loan/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ company_name: companyName }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('贷款查询响应状态:', response.status);
+                updateLoading('步骤3/5: 接收服务器响应...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const result = await response.json();
+                console.log('贷款查询结果:', result);
+                updateLoading('步骤4/5: 解析响应数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                updateLoading('步骤5/5: 渲染结果...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                removeLoading();
+                stopButton.disabled = true;
+                
+                if (result.code === 200) {
+                    const cardHtml = renderSimpleLoanCard(result.data);
+                    addCardToChat(cardHtml);
+                } else {
+                    addMessage(result.message || '查询失败');
+                }
+            } catch (error) {
+                console.error('贷款查询错误:', error);
+                if (error.name !== 'AbortError') {
+                    removeLoading();
+                    stopButton.disabled = true;
+                    addMessage(`查询失败：${error.message}`);
+                }
+                throw error;
+            }
+        }
+        
+        // 查询结算分
+        async function querySettlement(companyName) {
+            console.log('开始查询结算分，企业名称:', companyName);
+            currentAbortController = new AbortController();
+            
+            try {
+                updateLoading('步骤1/5: 准备请求数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const controller = currentAbortController;
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                updateLoading('步骤2/5: 发送请求到服务器...');
+                const response = await fetch('http://localhost:8000/api/settlement/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ company_name: companyName }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('结算分查询响应状态:', response.status);
+                updateLoading('步骤3/5: 接收服务器响应...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const result = await response.json();
+                console.log('结算分查询结果:', result);
+                updateLoading('步骤4/5: 解析响应数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                updateLoading('步骤5/5: 渲染结果...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                removeLoading();
+                stopButton.disabled = true;
+                
+                if (result.code === 200) {
+                    const cardHtml = renderSimpleSettlementCard(result.data);
+                    addCardToChat(cardHtml);
+                } else {
+                    addMessage(result.message || '查询失败');
+                }
+            } catch (error) {
+                console.error('结算分查询错误:', error);
+                if (error.name !== 'AbortError') {
+                    removeLoading();
+                    stopButton.disabled = true;
+                    addMessage(`查询失败：${error.message}`);
+                }
+                throw error;
+            }
+        }
+        
+        // 下载访前一页纸
+        async function downloadVisitReport(companyName) {
+            console.log('开始获取访前一页纸，企业名称:', companyName);
+            currentAbortController = new AbortController();
+            
+            try {
+                updateLoading('步骤1/6: 准备请求数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const controller = currentAbortController;
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                updateLoading('步骤2/6: 发送请求到服务器...');
+                const response = await fetch('http://localhost:8000/api/visit-report/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ company_name: companyName }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('访前一页纸响应状态:', response.status);
+                updateLoading('步骤3/6: 接收服务器响应...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                updateLoading('步骤4/6: 处理文件数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                if (response.ok) {
+                    updateLoading('步骤5/6: 准备下载文件...');
+                    await new Promise(r => setTimeout(r, 200));
+                    
+                    const blob = await response.blob();
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = `${companyName}.docx`;  // 默认使用企业名称
+                    if (contentDisposition) {
+                        // 首先尝试解析 RFC 5987 编码的文件名 (filename*=UTF-8'')
+                        const filenameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+                        if (filenameStarMatch && filenameStarMatch[1]) {
+                            // 解码 URL 编码的字符
+                            filename = decodeURIComponent(filenameStarMatch[1]);
+                        } else {
+                            // 回退到普通 filename 解析
+                            const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+                            if (filenameMatch && filenameMatch[1]) {
+                                filename = filenameMatch[1];
+                            }
+                        }
+                    }
+                    console.log('下载文件名:', filename);
+                    
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    updateLoading('步骤6/6: 完成！');
+                    await new Promise(r => setTimeout(r, 300));
+                    removeLoading();
+                    stopButton.disabled = true;
+                    
+                    // 显示下载成功卡片
+                    const cardHtml = `
+                        <div class="file-card">
+                            <div class="file-card-icon">📄</div>
+                            <div class="file-card-title">访前一页纸</div>
+                            <div class="file-card-subtitle">${companyName}</div>
+                            <div style="margin-top: 12px; font-size: 13px; opacity: 0.9;">文件已开始下载</div>
+                        </div>
+                    `;
+                    addCardToChat(cardHtml);
+                } else {
+                    updateLoading('步骤6/6: 处理错误...');
+                    await new Promise(r => setTimeout(r, 300));
+                    removeLoading();
+                    stopButton.disabled = true;
+                    
+                    let errorMessage = '获取访前一页纸失败';
+                    try {
+                        const errorResult = await response.json();
+                        errorMessage = errorResult.message || errorMessage;
+                    } catch (e) {
+                        console.error('解析错误响应失败:', e);
+                    }
+                    addMessage(errorMessage);
+                }
+            } catch (error) {
+                console.error('下载错误:', error);
+                removeLoading();
+                addMessage(`错误：${error.message}`);
+            }
+        }
+        
+        // 好客推荐
+        async function recommendCompanies() {
+            console.log('开始推荐企业');
+            currentAbortController = new AbortController();
+            
+            try {
+                updateLoading('步骤1/5: 准备请求数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const controller = currentAbortController;
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                updateLoading('步骤2/5: 发送请求到服务器...');
+                const response = await fetch('http://localhost:8000/api/recommend/companies', {
+                    method: 'GET',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('推荐企业响应状态:', response.status);
+                updateLoading('步骤3/5: 接收服务器响应...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const result = await response.json();
+                console.log('推荐企业结果:', result);
+                updateLoading('步骤4/5: 解析响应数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                updateLoading('步骤5/5: 渲染结果...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                removeLoading();
+                stopButton.disabled = true;
+                
+                if (result.code === 200) {
+                    const cardHtml = renderCompanyRecommendCard(result.data);
+                    addCardToChat(cardHtml);
+                } else {
+                    addMessage(result.message || '推荐失败');
+                }
+            } catch (error) {
+                console.error('推荐企业错误:', error);
+                if (error.name !== 'AbortError') {
+                    removeLoading();
+                    stopButton.disabled = true;
+                    addMessage(`推荐失败：${error.message}`);
+                }
+                throw error;
+            }
+        }
+        
+        // 查询客户卡片
+        async function queryCustomerCard(companyName) {
+            console.log('开始查询客户卡片，企业名称:', companyName);
+            currentAbortController = new AbortController();
+            
+            try {
+                updateLoading('步骤1/5: 准备请求数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const controller = currentAbortController;
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                updateLoading('步骤2/5: 发送请求到服务器...');
+                const response = await fetch('http://localhost:8000/api/customer/card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ company_name: companyName }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('客户卡片查询响应状态:', response.status);
+                updateLoading('步骤3/5: 接收服务器响应...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                const result = await response.json();
+                console.log('客户卡片查询结果:', result);
+                updateLoading('步骤4/5: 解析响应数据...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                updateLoading('步骤5/5: 渲染结果...');
+                await new Promise(r => setTimeout(r, 200));
+                
+                removeLoading();
+                stopButton.disabled = true;
+                
+                if (result.code === 200) {
+                    const cardHtml = renderCustomerCard(result.data);
+                    addCardToChat(cardHtml);
+                } else {
+                    addMessage(result.message || '查询失败');
+                }
+            } catch (error) {
+                console.error('客户卡片查询错误:', error);
+                if (error.name !== 'AbortError') {
+                    removeLoading();
+                    stopButton.disabled = true;
+                    addMessage(`查询失败：${error.message}`);
+                }
+                throw error;
+            }
+        }
+        
+        // 渲染简单存款卡片
+        function renderSimpleDepositCard(data) {
+            const depositInfo = data.deposit_info;
+            return `
+                <div class="deposit-card">
+                    <div class="deposit-card-header">${data.company_name}</div>
+                    <div class="deposit-card-subtitle">企业存款信息</div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">存款时点</span>
+                        <span class="deposit-value">¥${depositInfo['存款时点(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">存款年日均</span>
+                        <span class="deposit-value">¥${depositInfo['存款年日均(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">存款FTP净利润</span>
+                        <span class="deposit-value">¥${depositInfo['存款FTP净利润(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">预测所有银行存款</span>
+                        <span class="deposit-value">¥${depositInfo['预测所有银行存款金额(元)'].toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染简单贷款卡片
+        function renderSimpleLoanCard(data) {
+            const loanInfo = data.loan_info;
+            return `
+                <div class="loan-card">
+                    <div class="loan-card-header">${data.company_name}</div>
+                    <div class="loan-card-subtitle">企业贷款信息</div>
+                    <div class="loan-item">
+                        <span class="loan-label">授信额度</span>
+                        <span class="loan-value">¥${loanInfo['授信额度(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="loan-item">
+                        <span class="loan-label">贷款时点</span>
+                        <span class="loan-value">¥${loanInfo['贷款时点(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="loan-item">
+                        <span class="loan-label">贷款FTP净利润</span>
+                        <span class="loan-value">¥${loanInfo['贷款FTP净利润(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="loan-item">
+                        <span class="loan-label">预测所有银行贷款</span>
+                        <span class="loan-value">¥${loanInfo['预测所有银行贷款金额(元)'].toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染简单结算分卡片
+        function renderSimpleSettlementCard(data) {
+            const settlementInfo = data.settlement_info;
+            return `
+                <div class="deposit-card">
+                    <div class="deposit-card-header">${data.company_name}</div>
+                    <div class="deposit-card-subtitle">企业结算分信息</div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">结算分</span>
+                        <span class="deposit-value">${settlementInfo['结算分'].toFixed(2)}</span>
+                    </div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">我行结算金额(元)</span>
+                        <span class="deposit-value">¥${settlementInfo['我行结算金额(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">预测所有银行结算金额(元)</span>
+                        <span class="deposit-value">¥${settlementInfo['预测所有银行结算金额(元)'].toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染好客推荐卡片
+        function renderCompanyRecommendCard(data) {
+            const companies = data.recommended_companies;
+            let companiesHtml = '';
+            
+            companies.forEach((company, index) => {
+                const tagsHtml = company.tags.map(tag => `<span class="company-tag">${tag}</span>`).join(' ');
+                const reasonsHtml = company.reasons.map(reason => `<li>${reason}</li>`).join('');
+                
+                companiesHtml += `
+                    <div class="company-card">
+                        <div class="company-card-header">
+                            <h3>${company.company_name}</h3>
+                            <div class="company-tags">
+                                ${tagsHtml}
+                            </div>
+                        </div>
+                        <div class="company-card-content">
+                            <div class="company-info">
+                                <p><strong>注册资本:</strong> ${company.registered_capital}</p>
+                                <p><strong>成立时间:</strong> ${company.establishment_date}</p>
+                                <p><strong>地址:</strong> ${company.address}</p>
+                            </div>
+                            <div class="company-reasons">
+                                <strong>推荐理由:</strong>
+                                <ul>${reasonsHtml}</ul>
+                            </div>
+                        </div>
+                        <div class="company-card-footer">
+                            <button class="company-detail-btn">查看详情</button>
+                            <button class="company-contact-btn">企业触达</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return `
+                <div class="recommend-card">
+                    <div class="recommend-card-header">
+                        <h2>好客推荐（每日更新）</h2>
+                        <p>为您精选优质客户</p>
+                    </div>
+                    <div class="recommend-card-content">
+                        ${companiesHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染客户卡片
+        function renderCustomerCard(data) {
+            const tagsHtml = data.tags.map((tag, index) => {
+                let tagClass = 'customer-card-tag-primary';
+                if (index === 1) tagClass = 'customer-card-tag-danger';
+                if (index >= 2) tagClass = 'customer-card-tag-success';
+                return `<span class="customer-card-tag ${tagClass}">${tag}</span>`;
+            }).join('');
+            
+            const quickActionsHtml = data.quick_actions.map(action => {
+                let icon = '💰';
+                if (action.name === '查存款') icon = '💰';
+                if (action.name === '查贷款') icon = '💳';
+                if (action.name === '查结算') icon = '📊';
+                if (action.name === '访前一页纸') icon = '📄';
+                return `
+                    <button class="customer-card-action-btn" onclick="handleQuickAction('${action.skill_id}', '${data.company_name}')">
+                        <span class="customer-card-action-btn-icon">${icon}</span>
+                        ${action.name}
+                    </button>
+                `;
+            }).join('');
+            
+            return `
+                <div class="customer-card">
+                    <div class="customer-card-header">
+                        <h2>${data.company_name}</h2>
+                        <div class="customer-card-tags">
+                            ${tagsHtml}
+                        </div>
+                    </div>
+                    <div class="customer-card-info">
+                        <div class="customer-card-info-item">
+                            <span class="customer-card-info-label">管户人</span>
+                            <span class="customer-card-info-value">${data.manager || '-'}</span>
+                        </div>
+                        <div class="customer-card-info-item">
+                            <span class="customer-card-info-label">我行政府类客户标志</span>
+                            <span class="customer-card-info-value">${data.organization || '-'}</span>
+                        </div>
+                        <div class="customer-card-info-item">
+                            <span class="customer-card-info-label">注册资本</span>
+                            <span class="customer-card-info-value">${data.registered_capital || '-'}</span>
+                        </div>
+                        <div class="customer-card-info-item">
+                            <span class="customer-card-info-label">成立时间</span>
+                            <span class="customer-card-info-value">${data.establishment_date || '-'}</span>
+                        </div>
+                    </div>
+                    <div class="customer-card-actions">
+                        <div class="customer-card-action-section-title">快速操作</div>
+                        <div class="customer-card-action-grid">
+                            ${quickActionsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ==================== JSON语法高亮 ====================
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/"(\w+)"\s*:\s*/g, '<span class="json-key">"$1"</span>: ')
+                      .replace(/"([^"]+)"/g, '<span class="json-string">"$1"</span>')
+                      .replace(/\b(\d+)\b/g, '<span class="json-number">$1</span>')
+                      .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+                      .replace(/\bnull\b/g, '<span class="json-null">null</span>');
+        }
+        
+        // ==================== LUI卡片渲染函数 ====================
+        
+        // 渲染存款卡片
+        function renderDepositCard(data) {
+            const depositInfo = data.deposit_info;
+            return `
+                <div class="deposit-card">
+                    <div class="deposit-card-header">${data.company_name}</div>
+                    <div class="deposit-card-subtitle">企业存款信息</div>
+                    
+                    <div class="deposit-highlight">
+                        <div class="deposit-highlight-label">存款时点</div>
+                        <div class="deposit-highlight-value">¥${depositInfo['存款时点(元)'].toLocaleString()}</div>
+                    </div>
+                    
+                    <div class="deposit-item">
+                        <span class="deposit-label">存款年日均</span>
+                        <span class="deposit-value">¥${depositInfo['存款年日均(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">存款FTP净利润</span>
+                        <span class="deposit-value">¥${depositInfo['存款FTP净利润(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="deposit-item">
+                        <span class="deposit-label">预测所有银行存款</span>
+                        <span class="deposit-value">¥${depositInfo['预测所有银行存款金额(元)'].toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染贷款卡片
+        function renderLoanCard(data) {
+            const loanInfo = data.loan_info;
+            return `
+                <div class="loan-card">
+                    <div class="loan-card-header">${data.company_name}</div>
+                    <div class="loan-card-subtitle">企业贷款信息</div>
+                    
+                    <div class="loan-highlight">
+                        <div class="loan-highlight-label">授信额度</div>
+                        <div class="loan-highlight-value">¥${loanInfo['授信额度(元)'].toLocaleString()}</div>
+                    </div>
+                    
+                    <div class="loan-item">
+                        <span class="loan-label">贷款时点</span>
+                        <span class="loan-value">¥${loanInfo['贷款时点(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="loan-item">
+                        <span class="loan-label">贷款FTP净利润</span>
+                        <span class="loan-value">¥${loanInfo['贷款FTP净利润(元)'].toLocaleString()}</span>
+                    </div>
+                    <div class="loan-item">
+                        <span class="loan-label">预测所有银行贷款</span>
+                        <span class="loan-value">¥${loanInfo['预测所有银行贷款金额(元)'].toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染追问卡片
+        function renderClarifyCard(intentContext, slots, nlgText, callbackConfig) {
+            let slotsHtml = '';
+            
+            slots.forEach(slot => {
+                const isRequired = slot.required ? '<span class="clarify-slot-required">*</span>' : '';
+                const status = slot.status === 'FILLED' ? 'clarify-status-filled' : 'clarify-status-missing';
+                
+                let inputHtml = '';
+                if (slot.edit_type === 'SELECT' && slot.options) {
+                    // 下拉选择
+                    const optionsHtml = slot.options.map(opt => 
+                        `<option value="${opt.name}" ${slot.value === opt.name ? 'selected' : ''}>${opt.name}</option>`
+                    ).join('');
+                    inputHtml = `
+                        <select class="clarify-slot-select" data-key="${slot.key}">
+                            <option value="">请选择...</option>
+                            ${optionsHtml}
+                        </select>
+                    `;
+                } else {
+                    // 文本输入
+                    inputHtml = `
+                        <input type="text" class="clarify-slot-input ${status}" 
+                               data-key="${slot.key}" 
+                               value="${slot.value || ''}" 
+                               placeholder="请输入${slot.label}...">
+                    `;
+                }
+                
+                slotsHtml += `
+                    <div class="clarify-slot">
+                        <div class="clarify-slot-label">${slot.label} ${isRequired}</div>
+                        ${inputHtml}
+                    </div>
+                `;
+            });
+            
+            const cardId = 'clarify-card-' + Date.now();
+            
+            return `
+                <div class="clarify-card" id="${cardId}" data-intent-id="${intentContext.intent_id}">
+                    <div class="clarify-header">${intentContext.intent_name}</div>
+                    <div class="clarify-nlg">${nlgText}</div>
+                    ${slotsHtml}
+                    <button class="clarify-submit-btn" onclick="submitClarify('${cardId}')">确认提交</button>
+                </div>
+            `;
+        }
+        
+        // 提交追问卡片
+        async function submitClarify(cardId) {
+            const card = document.getElementById(cardId);
+            const intentId = card.getAttribute('data-intent-id');
+            const inputs = card.querySelectorAll('[data-key]');
+            const values = {};
+            
+            inputs.forEach(input => {
+                const key = input.getAttribute('data-key');
+                const value = input.value;
+                values[key] = value;
+            });
+            
+            console.log('提交追问:', { cardId, intentId, values });
+            
+            // 提取企业名称和ID
+            const companyName = values['target_company'] || values['company_name'] || '';
+            const companyId = values['customer_id'] || values['company_id'] || '';
+            
+            // 显示完整的查询信息（用户可见）
+            let displayMessage = '';
+            if (intentId === 'QUERY_TOTAL_DEPOSIT_BALANCE_INDICATOR') {
+                displayMessage = `查询客户存款信息（${companyName}${companyId ? `, ${companyId}` : ''}）`;
+            } else if (intentId === 'QUERY_LOAN_INFO') {
+                displayMessage = `查询客户贷款信息（${companyName}${companyId ? `, ${companyId}` : ''}）`;
+            } else if (intentId === 'QUERY_VISIT_REPORT') {
+                displayMessage = `获取客户访前一页纸（${companyName}${companyId ? `, ${companyId}` : ''}）`;
+            } else {
+                displayMessage = `查询客户信息（${companyName}${companyId ? `, ${companyId}` : ''}）`;
+            }
+            
+            addMessage(displayMessage, true);
+            
+            // 移除追问卡片
+            card.remove();
+            
+            // 添加加载状态
+            addLoading('正在处理...');
+            stopButton.disabled = false;
+            
+            try {
+                // 直接根据 intent_id 调用对应的API
+                if (intentId === 'QUERY_TOTAL_DEPOSIT_BALANCE_INDICATOR') {
+                    await queryDeposit(companyName);
+                } else if (intentId === 'QUERY_LOAN_INFO') {
+                    await queryLoan(companyName);
+                } else if (intentId === 'QUERY_VISIT_REPORT') {
+                    await downloadVisitReport(companyName);
+                } else {
+                    throw new Error(`未知的意图类型: ${intentId}`);
+                }
+            } catch (error) {
+                console.error('追问处理错误:', error);
+                removeLoading();
+                stopButton.disabled = true;
+                addMessage(`错误：${error.message}`);
+            }
+        }
+        
+        // ==================== 基础功能函数 ====================
+        
+        function addMessage(content, isUser = false) {
+            console.log('addMessage 被调用:', { content, isUser });
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            console.log('创建的内容:', contentDiv.textContent);
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            const now = new Date();
+            timeDiv.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            messageDiv.appendChild(contentDiv);
+            messageDiv.appendChild(timeDiv);
+            chatContainer.appendChild(messageDiv);
+            console.log('消息已添加到聊天容器');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            console.log('已滚动到底部');
+        }
+        
+        function addStep(stepName, content, isJson = false, duration = null) {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'step-container';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'step-header';
+            if (duration !== null) {
+                headerDiv.innerHTML = `${stepName} <span style="color: red; font-weight: normal;">耗时：${duration.toFixed(3)}秒</span>`;
+            } else {
+                headerDiv.textContent = stepName;
+            }
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'step-content';
+            
+            if (isJson) {
+                const jsonDiv = document.createElement('div');
+                jsonDiv.className = 'json-content';
+                const jsonString = JSON.stringify(content, null, 2);
+                jsonDiv.innerHTML = syntaxHighlight(jsonString);
+                contentDiv.appendChild(jsonDiv);
+            } else {
+                contentDiv.textContent = content;
+            }
+            
+            stepDiv.appendChild(headerDiv);
+            stepDiv.appendChild(contentDiv);
+            stepsContainer.appendChild(stepDiv);
+            stepsContainer.scrollTop = stepsContainer.scrollHeight;
+        }
+        
+        function addLoading(initialText = '正在处理...') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot-message';
+            messageDiv.id = 'loadingMessage';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.id = 'loadingContent';
+            contentDiv.innerHTML = `<div class="loading"></div> ${initialText}`;
+            
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function updateLoading(text) {
+            const loadingContent = document.getElementById('loadingContent');
+            if (loadingContent) {
+                loadingContent.innerHTML = `<div class="loading"></div> ${text}`;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+        
+        function removeLoading() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+        
+        // 添加卡片到聊天窗口
+        // 处理客户卡片快速操作
+        function handleQuickAction(skillId, companyName) {
+            // 根据skill_id判断要执行的技能
+            let skillToExecute = '';
+            if (skillId === 'SKILL_DEPOSIT_QUERY_V1') {
+                skillToExecute = 'deposit';
+            } else if (skillId === 'SKILL_LOAN_QUERY_V1') {
+                skillToExecute = 'loan';
+            } else if (skillId === 'SKILL_SETTLEMENT_QUERY_V1') {
+                skillToExecute = 'settlement';
+            } else if (skillId === 'SKILL_VISIT_REPORT_V1') {
+                skillToExecute = 'visit-report';
+            }
+            
+            if (skillToExecute) {
+                // 添加用户消息
+                let userMessage = '';
+                if (skillToExecute === 'deposit') {
+                    userMessage = `查询 ${companyName} 的存款`;
+                } else if (skillToExecute === 'loan') {
+                    userMessage = `查询 ${companyName} 的贷款`;
+                } else if (skillToExecute === 'settlement') {
+                    userMessage = `查询 ${companyName} 的结算分`;
+                } else if (skillToExecute === 'visit-report') {
+                    userMessage = `获取 ${companyName} 的访前一页纸`;
+                }
+                addMessage(userMessage, true);
+                
+                // 添加加载状态
+                addLoading();
+                stopButton.disabled = false;
+                
+                // 执行技能
+                (async () => {
+                    try {
+                        if (skillToExecute === 'deposit') {
+                            await queryDeposit(companyName);
+                        } else if (skillToExecute === 'loan') {
+                            await queryLoan(companyName);
+                        } else if (skillToExecute === 'settlement') {
+                            await querySettlement(companyName);
+                        } else if (skillToExecute === 'visit-report') {
+                            await downloadVisitReport(companyName);
+                        }
+                    } catch (error) {
+                        console.error('快速操作错误:', error);
+                        if (error.name !== 'AbortError') {
+                            removeLoading();
+                            stopButton.disabled = true;
+                            addMessage(`错误：${error.message}`);
+                        }
+                    }
+                })();
+            }
+        }
+        
+        function addCardToChat(cardHtml) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'message bot-message';
+            cardDiv.style.maxWidth = '95%';
+            cardDiv.innerHTML = cardHtml;
+            
+            chatContainer.appendChild(cardDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // 更新六步走处理结果
+        function updatePipelineSteps(requestData, result) {
+            // Step 1: 安全围栏
+            const step1Duration = result.step1_duration || 0;
+            document.getElementById('step1Content').innerHTML = `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">耗时：</div>
+                    <div class="pipeline-step-value" style="color: red;">${step1Duration.toFixed(3)}秒</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">输入：</div>
+                    <div class="pipeline-step-value">${requestData.raw_query}</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">输出：</div>
+                    <div class="pipeline-step-value">${result.is_rejected ? '拒绝（' + result.rejection_reason + '）' : '通过'}</div>
+                </div>
+            `;
+            
+            // Step 2: 上下文加载
+            const step2Duration = result.step2_duration || 0;
+            document.getElementById('step2Content').innerHTML = `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">耗时：</div>
+                    <div class="pipeline-step-value" style="color: red;">${step2Duration.toFixed(3)}秒</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">输入信息：</div>
+                    <div class="pipeline-step-value">用户ID: ${requestData.user_id}, 会话ID: ${requestData.session_id}</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">上一轮对话：</div>
+                    <div class="pipeline-step-value">${result.last_turn_query || '无'}</div>
+                </div>
+            `;
+            
+            // Step 3: 实体提取器
+            const step3Duration = result.step3_duration || 0;
+            const normalizedQuery = result.normalized_query ? result.normalized_query.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '';
+            
+            let step3Content = `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">耗时：</div>
+                    <div class="pipeline-step-value" style="color: red;">${step3Duration.toFixed(3)}秒</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">原始query：</div>
+                    <div class="pipeline-step-value">${result.raw_query}</div>
+                </div>
+            `;
+            
+            // 构建实体提取发现内容
+            if (result.ambiguous_candidates && Object.keys(result.ambiguous_candidates).length > 0) {
+                for (const [key, candidates] of Object.entries(result.ambiguous_candidates)) {
+                    step3Content += `
+                        <div class="pipeline-step-row">
+                            <div class="pipeline-step-label">实体提取发现：</div>
+                            <div class="pipeline-step-value">${key}</div>
+                        </div>
+                        <div class="pipeline-step-row">
+                            <div class="pipeline-step-label">实体提取结果：</div>
+                            <div class="pipeline-step-value">
+                    `;
+                    candidates.forEach((candidate, index) => {
+                        step3Content += `${index + 1}. ${candidate.name} (ID: ${candidate.id})<br>`;
+                    });
+                    step3Content += '</div></div>';
+                }
+            }
+            
+            step3Content += `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">第一次改写结果：</div>
+                    <div class="pipeline-step-value">${normalizedQuery}</div>
+                </div>
+            `;
+            
+            document.getElementById('step3Content').innerHTML = step3Content;
+            
+            // Step 4: 意图识别
+            const step4Duration = result.step4_duration || 0;
+            const step4Input = result.normalized_query ? result.normalized_query.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '';
+            
+            let step4Content = `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">耗时：</div>
+                    <div class="pipeline-step-value" style="color: red;">${step4Duration.toFixed(3)}秒</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">输入信息：</div>
+                    <div class="pipeline-step-value">${step4Input}</div>
+                </div>
+            `;
+            
+            step4Content += `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">近三轮上下文信息：</div>
+                    <div class="pipeline-step-value">
+                        ${result.history_context ? 
+                            `<div style="background-color: #f5f5f5; padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap;">${result.history_context.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : 
+                            '无'}
+                    </div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">query改写结果：</div>
+                    <div class="pipeline-step-value">${step4Input}</div>
+                </div>
+            `;
+            
+            step4Content += `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">调用大模型：</div>
+                    <div class="pipeline-step-value"><a href="#" style="color: #1890ff;">${result.model_name || '未知模型'}</a></div>
+                </div>
+            `;
+            
+            // 添加发送给大模型的prompt原文
+            if (result.prompt) {
+                step4Content += `
+                    <div style="margin-top: 15px; font-weight: bold; color: #333;">发送给大模型的prompt原文：</div>
+                    <div class="pipeline-step-row">
+                        <div class="pipeline-step-label"></div>
+                        <div class="pipeline-step-value">
+                            <div class="json-content" style="margin-top:5px; white-space: pre-wrap; font-family: 'Courier New', monospace;">
+                                ${result.prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                step4Content += `
+                    <div style="margin-top: 15px; font-weight: bold; color: #333;">发送给大模型的prompt原文：</div>
+                    <div class="pipeline-step-row">
+                        <div class="pipeline-step-label"></div>
+                        <div class="pipeline-step-value" style="color: #999;">
+                            无数据 (prompt为空)
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 添加 LangFuse 追踪信息
+            step4Content += `
+                <div style="margin-top: 15px; font-weight: bold; color: #333;">LangFuse 追踪信息：</div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">可观测性：</div>
+                    <div class="pipeline-step-value">
+                        ${result.langfuse_trace_url ? 
+                            `<a href="${result.langfuse_trace_url}" target="_blank" style="color: #1890ff;">查看完整追踪详情 ↗</a>` : 
+                            '<span style="color: #999;">未启用 LangFuse</span>'
+                        }
+                    </div>
+                </div>
+            `;
+            
+            // 添加大模型真实返回结果（用于调试）
+            console.log('llm_raw_response:', result.llm_raw_response);
+            if (result.llm_raw_response && Object.keys(result.llm_raw_response).length > 0) {
+                step4Content += `
+                    <div style="margin-top: 15px; font-weight: bold; color: #333;">大模型真实返回结果：</div>
+                    <div class="pipeline-step-row">
+                        <div class="pipeline-step-label">原始JSON：</div>
+                        <div class="pipeline-step-value">
+                            <div class="json-content" style="margin-top:5px;">
+                                ${JSON.stringify(result.llm_raw_response, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                step4Content += `
+                    <div style="margin-top: 15px; font-weight: bold; color: #333;">大模型真实返回结果：</div>
+                    <div class="pipeline-step-row">
+                        <div class="pipeline-step-label">原始JSON：</div>
+                        <div class="pipeline-step-value" style="color: #999;">
+                            无数据 (llm_raw_response为空)
+                        </div>
+                    </div>
+                `;
+            }
+            
+            step4Content += `
+                <div style="margin-top: 15px; font-weight: bold; color: #333;">大模型匹配结果：</div>
+            `;
+            
+            // 获取技能名称
+            let skillName = result.llm_raw_response?.intent || result.skill_id || '未知';
+            
+            step4Content += `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">匹配技能：</div>
+                    <div class="pipeline-step-value">${skillName} (${result.llm_raw_response?.intent || result.skill_id || '未知'})</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">置信度：</div>
+                    <div class="pipeline-step-value">${result.llm_raw_response?.confidence ? result.llm_raw_response.confidence.toFixed(2) : result.confidence ? result.confidence.toFixed(2) : '无'} (${result.llm_raw_response?.confidence >= 0.8 ? '通过' : '未通过'})</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">行动建议：</div>
+                    <div class="pipeline-step-value">${result.llm_raw_response?.action || result.action || '未知'}</div>
+                </div>
+            `;
+            
+            // 添加下发给灵犀的原文
+            const suggestionsToDisplay = result.action_suggestions && result.action_suggestions.length > 0 
+                ? result.action_suggestions 
+                : result.action_suggestion;
+            if (suggestionsToDisplay) {
+                step4Content += `
+                    <div style="margin-top: 15px; font-weight: bold; color: #333;">下发给灵犀的原文：</div>
+                    <div class="pipeline-step-row">
+                        <div class="pipeline-step-label"></div>
+                        <div class="pipeline-step-value">
+                            <div class="json-content" style="margin-top:5px;">
+                                ${JSON.stringify(suggestionsToDisplay, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('step4Content').innerHTML = step4Content;
+        }
+        
+        // ==================== 工具函数 ====================
+        
+        // 执行单个技能
+        async function executeSingleSkill(actionSuggestion) {
+            const action = actionSuggestion.action;
+            const skill = actionSuggestion.skill;
+            const parameters = actionSuggestion.parameters;
+            
+            if (action === 'CLARIFY') {
+                // 显示追问信息
+                const responseText = actionSuggestion.response_text || '请提供更多信息';
+                addMessage(responseText);
+                return false; // 停止后续执行
+                
+            } else if (action === 'EXECUTE') {
+                // 执行技能 - 调用API获取数据
+                const skillInfo = skillTable[skill];
+                if (!skillInfo) {
+                    addMessage(`错误：未知的技能 ${skill}`);
+                    return true; // 继续执行下一个
+                }
+                
+                const step6Start = performance.now();
+                addStep('步骤6：调用业务API', `调用 ${skillInfo.apiEndpoint}<br>参数：${JSON.stringify(parameters)}`);
+                
+                // 调用对应的API
+                try {
+                    // 映射slot_name到API参数
+                let apiParams = {};
+                if (skill === 'SKILL_DEPOSIT_QUERY_V1' || skill === 'SKILL_LOAN_QUERY_V1' || skill === 'SKILL_SETTLEMENT_QUERY_V1' || skill === 'SKILL_VISIT_REPORT_V1' || skill === 'SKILL_CUSTOMER_CARD_V1') {
+                    // 对于这些技能，需要company_name参数
+                    apiParams.company_name = parameters.company_name || parameters.target_company || parameters.customer_name;
+                }
+                
+                // 检查必要参数
+                if ((skill === 'SKILL_DEPOSIT_QUERY_V1' || skill === 'SKILL_LOAN_QUERY_V1' || skill === 'SKILL_SETTLEMENT_QUERY_V1' || skill === 'SKILL_VISIT_REPORT_V1' || skill === 'SKILL_CUSTOMER_CARD_V1') && !apiParams.company_name) {
+                    addMessage('错误：缺少企业名称参数');
+                    addStep('参数错误', '企业名称不能为空');
+                    return true; // 继续执行下一个
+                }
+                    
+                    // 发送API请求
+                    let apiResponse;
+                    if (skill === 'SKILL_COMPANY_RECOMMEND_V1') {
+                        // 好客推荐使用GET请求，不需要参数
+                        apiResponse = await fetch(`http://localhost:8000${skillInfo.apiEndpoint}`, {
+                            method: 'GET'
+                        });
+                    } else {
+                        // 其他技能使用POST请求
+                        apiResponse = await fetch(`http://localhost:8000${skillInfo.apiEndpoint}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(apiParams)
+                        });
+                    }
+                    
+                    // 检查响应状态
+                    if (!apiResponse.ok) {
+                        // 尝试解析错误响应
+                        try {
+                            const errorResult = await apiResponse.json();
+                            addMessage(`错误：${errorResult.message || '请求失败'}`);
+                        } catch (e) {
+                            addMessage(`错误：请求失败 (${apiResponse.status})`);
+                        }
+                        return true; // 继续执行下一个
+                    }
+                    
+                    // 根据响应内容类型处理
+                    const contentType = apiResponse.headers.get('content-type');
+                    let responseText = '';
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        // 处理JSON响应（存款、贷款查询）
+                        const apiResult = await apiResponse.json();
+                        const step7Start = performance.now();
+                        addStep('步骤7：接收业务数据', apiResult, true, step7Start - step6Start);
+                        
+                        // 检查响应数据结构
+                        if (apiResult.code === 200 && apiResult.data) {
+                            // 根据UI组件类型渲染不同卡片
+                        if (skillInfo.uiComponent === 'DEPOSIT_CARD') {
+                            const cardHtml = renderDepositCard(apiResult.data);
+                            addCardToChat(cardHtml);
+                            responseText = `查询到${apiParams.company_name}的存款信息`;
+                        } else if (skillInfo.uiComponent === 'LOAN_CARD') {
+                            const cardHtml = renderLoanCard(apiResult.data);
+                            addCardToChat(cardHtml);
+                            responseText = `查询到${apiParams.company_name}的贷款信息`;
+                        } else if (skillInfo.uiComponent === 'SETTLEMENT_CARD') {
+                            const cardHtml = renderSimpleSettlementCard(apiResult.data);
+                            addCardToChat(cardHtml);
+                            responseText = `查询到${apiParams.company_name}的结算分信息`;
+                        } else if (skillInfo.uiComponent === 'COMPANY_RECOMMEND_CARD') {
+                            const cardHtml = renderCompanyRecommendCard(apiResult.data);
+                            addCardToChat(cardHtml);
+                            responseText = '为您推荐了5个优质企业';
+                        } else if (skillInfo.uiComponent === 'CUSTOMER_CARD') {
+                            const cardHtml = renderCustomerCard(apiResult.data);
+                            addCardToChat(cardHtml);
+                            responseText = `已获取${apiParams.company_name}的客户卡片`;
+                        }
+                        } else {
+                            // 处理错误响应
+                            addMessage(`错误：${apiResult.message || '请求失败'}`);
+                        }
+                    } else {
+                        // 处理文件下载（访前一页纸）
+                        const step7Start = performance.now();
+                        addStep('步骤7：接收业务数据', '文件下载响应', false, (step7Start - step6Start) / 1000);
+                        
+                        const blob = await apiResponse.blob();
+                        const contentDisposition = apiResponse.headers.get('Content-Disposition');
+                        let filename = `${apiParams.company_name}.docx`;
+                        if (contentDisposition) {
+                            // 首先尝试解析 RFC 5987 编码的文件名 (filename*=UTF-8'')
+                            const filenameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+                            if (filenameStarMatch && filenameStarMatch[1]) {
+                                // 解码 URL 编码的字符
+                                filename = decodeURIComponent(filenameStarMatch[1]);
+                            } else {
+                                // 回退到普通 filename 解析
+                                const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+                                if (filenameMatch && filenameMatch[1]) {
+                                    filename = filenameMatch[1];
+                                }
+                            }
+                        }
+                        
+                        // 创建下载链接
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        
+                        // 显示下载成功卡片
+                        const cardHtml = `
+                            <div class="file-card">
+                                <div class="file-card-icon">📄</div>
+                                <div class="file-card-title">访前一页纸</div>
+                                <div class="file-card-subtitle">${apiParams.company_name}</div>
+                                <div style="margin-top: 12px; font-size: 13px; opacity: 0.9;">文件已开始下载</div>
+                            </div>
+                        `;
+                        addCardToChat(cardHtml);
+                        responseText = `已为您下载${apiParams.company_name}的访前一页纸`;
+                    }
+                    
+                } catch (apiError) {
+                    addMessage(`错误：${apiError.message}`);
+                    addStep('API调用错误', apiError.message);
+                }
+                
+                return true; // 继续执行下一个
+                
+            } else if (action === 'FALLBACK') {
+                // 回退消息
+                const responseText = actionSuggestion.response_text || '我不太理解您的问题，请换个方式表述';
+                addMessage(responseText);
+                return false; // 停止后续执行
+            }
+            
+            return true;
+        }
+        
+        // ==================== 主流程 ====================
+        
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // 清空步骤容器
+            stepsContainer.innerHTML = '';
+            
+            // 添加用户消息
+            addMessage(message, true);
+            userInput.value = '';
+            
+            // 添加加载状态
+            addLoading();
+            
+            try {
+                // 步骤1：接收用户输入
+                const step1Start = performance.now();
+                addStep('步骤1：接收用户输入', message);
+                const step1End = performance.now();
+                const step1Duration = (step1End - step1Start) / 1000;
+                
+                // 步骤2：构建请求参数
+                const step2Start = performance.now();
+                const requestData = {
+                    user_id: 'test_user_001',
+                    app_id: 'Lingxi',
+                    session_id: 'session_001',
+                    raw_query: message
+                };
+                addStep('步骤2：构建请求参数', requestData, true, (step2Start - step1End) / 1000);
+                
+                // 步骤3：调用意图引擎 API
+                const step3Start = performance.now();
+                addStep('步骤3：调用意图引擎 API', '发送请求到 http://localhost:8000/intent/recognize', false, (step3Start - step2Start) / 1000);
+                
+                const response = await fetch('http://localhost:8000/intent/recognize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // 步骤4：接收意图引擎响应（创建副本，删除调试字段）
+                const step4Start = performance.now();
+                const displayResult = { ...result };
+                delete displayResult.llm_raw_response;
+                delete displayResult.prompt;
+                delete displayResult.history_context;
+                addStep('步骤4：接收意图引擎响应', displayResult, true, (step4Start - step3Start) / 1000);
+                
+                // 更新中间面板的六步走处理结果
+                updatePipelineSteps(requestData, result);
+                
+                // 步骤5：解析响应结果
+                const firstAction = result.action_suggestions && result.action_suggestions.length > 0 
+                    ? result.action_suggestions[0] 
+                    : result.action_suggestion;
+                const action = firstAction?.action || 'UNKNOWN';
+                const step5Start = performance.now();
+                addStep('步骤5：解析响应结果', `Action类型：${action}`, false, (step5Start - step4Start) / 1000);
+                
+                // 移除加载状态
+                removeLoading();
+                
+                // 优先使用 action_suggestions 数组
+                if (result.action_suggestions && result.action_suggestions.length > 0) {
+                    // 有多个意图，逐个执行
+                    console.log('多个意图，逐个执行:', result.action_suggestions);
+                    for (let i = 0; i < result.action_suggestions.length; i++) {
+                        const suggestion = result.action_suggestions[i];
+                        const shouldContinue = await executeSingleSkill(suggestion);
+                        
+                        // 如果是最后一个意图，或者遇到停止信号，就退出
+                        if (!shouldContinue) {
+                            break;
+                        }
+                        
+                        // 如果不是最后一个意图，等待1秒让用户看到结果
+                        if (i < result.action_suggestions.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    }
+                } else if (result.action_suggestion) {
+                    // 单个意图的情况（向后兼容）
+                    console.log('单个意图，向后兼容执行');
+                    await executeSingleSkill(result.action_suggestion);
+                }
+                
+            } catch (error) {
+                // 移除加载状态
+                removeLoading();
+                
+                // 显示错误信息
+                addMessage(`错误：${error.message}`);
+                addStep('错误信息', error.message);
+            }
+        }
+        
+        // 发送按钮点击事件
+        sendButton.addEventListener('click', sendMessage);
+        
+        // 回车键发送
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

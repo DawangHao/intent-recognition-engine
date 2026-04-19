@@ -1,0 +1,27 @@
+{
+"intent": [
+		{
+			"agent_id": "Lingxi",
+			"app_name": "灵犀",
+			"description": "对公智能体",
+			"skill_id": 
+				[
+				"SKILL_DEPOSIT_QUERY_V1",
+				"SKILL_LOAN_QUERY_V1",
+				"SKILL_VISIT_REPORT_V1",
+				"SKILL_SETTLEMENT_QUERY_V1",
+				"SKILL_COMPANY_RECOMMEND_V1",
+				"SKILL_CUSTOMER_CARD_V1"
+				]
+		},
+		{
+			"agent_id": "Guangnian",
+			"app_name": "光年",
+			"description": "零售智能体",
+			"skill_id": 
+				[
+				"QUERY_AUM"
+				]
+		}
+	]
+}

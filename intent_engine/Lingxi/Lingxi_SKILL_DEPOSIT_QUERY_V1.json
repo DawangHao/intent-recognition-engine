@@ -1,0 +1,27 @@
+{
+  "agent_id": "Lingxi",
+  "skill_id": "SKILL_DEPOSIT_QUERY_V1",
+  "skill_description": "查询企业的存款余额信息，包括存款时点、存款年日均、存款FTP净利润、预测所有银行存款金额",
+  "trigger_keywords": [
+    "存款",
+    "余额",
+    "总存款",
+    "日均存款",
+    "存款年日均",
+    "存款营收"
+  ],
+  "slots": [
+    {
+      "slot_key": "target_company",
+      "entity_type": "UNKNOWN",
+      "is_required": true,
+      "clarify_prompt": "要查询的企业名称"
+    },
+    {
+      "slot_key": "time_context",
+      "entity_type": "UNKNOWN",
+      "is_required": false,
+      "clarify_prompt": "查询时间范围"
+    }
+  ]
+}

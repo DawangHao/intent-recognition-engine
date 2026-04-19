@@ -1,0 +1,19 @@
+{
+  "agent_id": "Lingxi",
+  "skill_id": "SKILL_SETTLEMENT_QUERY_V1",
+  "skill_description": "查询企业的结算分信息，包括结算分、我行结算金额、预测所有银行结算金额",
+  "trigger_keywords": [
+    "结算分",
+    "结算",
+    "结算金额",
+    "结算归行率"
+  ],
+  "slots": [
+    {
+      "slot_key": "target_company",
+      "entity_type": "UNKNOWN",
+      "is_required": true,
+      "clarify_prompt": "要查询的企业名称"
+    }
+  ]
+}

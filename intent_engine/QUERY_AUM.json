@@ -1,0 +1,27 @@
+{
+  "agent_id": "Guangnian",
+  "intent_id": "QUERY_AUM",
+  "intent_name": "查询个人客户的金融总资产AUM",
+  "trigger_keywords": [
+    "AUM",
+    "客户的金融总资产",
+    "金总"
+  ],
+  "slots": [
+    {
+      "slot_key": "target_indi",
+      "entity_type": "INDI_NAME",
+      "is_required": true,
+      "clarify_prompt": "请提供您要查询的个人客户姓名"
+    },
+    {
+      "slot_key": "time_context",
+      "entity_type": "DATE_OR_PERIOD",
+      "is_required": false,
+      "clarify_prompt": "请提供查询时间范围"
+    }
+  ],
+  "dispatch_config": {
+    "skill_id": "SKILL_AUM_QUERY_V1"
+  }
+}

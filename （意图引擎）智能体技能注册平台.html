@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>（意图引擎）智能体技能注册平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+
+        .upload-section.dragover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 14px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .preview-section {
+            display: none;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .agent-info {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .agent-info h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .agent-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .info-item .value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .skills-section {
+            margin-top: 20px;
+        }
+
+        .skills-section h3 {
+            color: #333;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .skill-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .skill-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .skill-id {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .skill-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .parameters-section h4 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .parameter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9ff;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .parameter-info {
+            display: flex;
+            gap: 12px;
+        }
+
+        .param-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .param-required {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .param-required.yes {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .param-required.no {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .param-description {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .status-message.success {
+            display: block;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-message.error {
+            display: block;
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-list h4 {
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .file-icon {
+            font-size: 24px;
+        }
+
+        .file-name {
+            flex: 1;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .file-status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 （意图引擎）智能体技能注册平台</h1>
+            <p>上传技能清单JSON文件，自动生成对应的技能注册文件</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">点击或拖拽上传技能清单JSON文件</div>
+                <div class="upload-hint">支持 .json 文件格式</div>
+                <input type="file" id="fileInput" accept=".json">
+            </div>
+
+            <div class="preview-section" id="previewSection">
+                <div class="agent-info">
+                    <h3>📋 智能体信息</h3>
+                    <div class="agent-info-grid" id="agentInfoGrid">
+                    </div>
+                </div>
+
+                <div class="skills-section">
+                    <h3>🛠️ 技能清单</h3>
+                    <div id="skillsContainer">
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="resetBtn">重新上传</button>
+                    <button class="btn btn-primary" id="generateBtn">生成技能文件</button>
+                </div>
+
+                <div class="status-message" id="statusMessage">
+                </div>
+
+                <div class="file-list" id="fileList">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const previewSection = document.getElementById('previewSection');
+        const resetBtn = document.getElementById('resetBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const fileList = document.getElementById('fileList');
+
+        uploadSection.addEventListener('click', () => fileInput.click());
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.json')) {
+                handleFile(file);
+            } else {
+                showStatus('请上传JSON格式的文件', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    currentData = JSON.parse(e.target.result);
+                    renderPreview(currentData);
+                    uploadSection.style.display = 'none';
+                    previewSection.classList.add('active');
+                } catch (err) {
+                    showStatus('JSON解析失败，请检查文件格式', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function renderPreview(data) {
+            const agentInfoGrid = document.getElementById('agentInfoGrid');
+            agentInfoGrid.innerHTML = `
+                <div class="info-item">
+                    <label>智能体ID</label>
+                    <div class="value">${data.agent_id || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <label>版本</label>
+                    <div class="value">${data.version || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <label>最后更新</label>
+                    <div class="value">${data.last_updated || '-'}</div>
+                </div>
+                <div class="info-item">
+                    <label>技能数量</label>
+                    <div class="value">${(data.skills || []).length}</div>
+                </div>
+            `;
+
+            const skillsContainer = document.getElementById('skillsContainer');
+            skillsContainer.innerHTML = (data.skills || []).map((skill, index) => `
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <span class="skill-id">${skill.skill_id}</span>
+                        <span style="color: #999; font-size: 13px;">#${index + 1}</span>
+                    </div>
+                    <div class="skill-description">${skill.skill_description || '-'}</div>
+                    <div class="parameters-section">
+                        <h4>📝 输入参数</h4>
+                        ${(skill.input_parameters || []).map(param => `
+                            <div class="parameter-item">
+                                <div class="parameter-info">
+                                    <span class="param-name">${param.name}</span>
+                                    <span class="param-required ${param.is_required ? 'yes' : 'no'}">
+                                        ${param.is_required ? '必填' : '选填'}
+                                    </span>
+                                </div>
+                                <span class="param-description">${param.description || '-'}</span>
+                            </div>
+                        `).join('') || '<div style="color: #999; padding: 12px;">无参数</div>'}
+                    </div>
+                    <div class="keywords-section">
+                        <h4>🔍 技能识别关键词</h4>
+                        <div style="padding: 12px; background: #f8f9ff; border-radius: 6px;">
+                            <input type="text" 
+                                   id="keywords-${index}" 
+                                   class="keywords-input"
+                                   value="${(skill.trigger_keywords || []).join(', ')}"
+                                   placeholder="请输入关键词，以逗号分隔"
+                                   style="width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 13px;">
+                            <div style="margin-top: 8px; font-size: 12px; color: #999;">
+                                示例：存款, 余额, deposit, balance
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        resetBtn.addEventListener('click', () => {
+            currentData = null;
+            fileInput.value = '';
+            uploadSection.style.display = 'block';
+            previewSection.classList.remove('active');
+            statusMessage.className = 'status-message';
+            fileList.innerHTML = '';
+        });
+
+        generateBtn.addEventListener('click', () => {
+            if (!currentData) {
+                showStatus('请先上传技能清单文件', 'error');
+                return;
+            }
+
+            try {
+                const agentId = currentData.agent_id || 'Unknown';
+                const files = [];
+
+                (currentData.skills || []).forEach((skill, index) => {
+                    // 获取用户输入的关键词
+                    const keywordsInput = document.getElementById(`keywords-${index}`);
+                    let triggerKeywords = [];
+                    
+                    if (keywordsInput) {
+                        // 从输入框获取关键词，以逗号分隔
+                        const keywordsText = keywordsInput.value.trim();
+                        if (keywordsText) {
+                            triggerKeywords = keywordsText.split(',').map(keyword => keyword.trim()).filter(keyword => keyword);
+                        }
+                    }
+                    
+                    // 如果用户没有输入关键词，从技能清单中提取
+                    if (triggerKeywords.length === 0 && skill.trigger_keywords) {
+                        triggerKeywords = skill.trigger_keywords;
+                    }
+                    
+                    const skillData = {
+                        agent_id: agentId,
+                        skill_id: skill.skill_id,
+                        skill_description: skill.skill_description || skill.skill_name || '',
+                        trigger_keywords: triggerKeywords,
+                        slots: (skill.input_parameters || []).map(param => ({
+                            slot_key: param.name,
+                            entity_type: 'UNKNOWN',
+                            is_required: param.is_required,
+                            clarify_prompt: param.description || ''
+                        }))
+                    };
+
+                    const fileName = `${agentId}_${skill.skill_id}.json`;
+                    const content = JSON.stringify(skillData, null, 2);
+                    files.push({ name: fileName, content: content });
+                });
+
+                if (files.length === 1) {
+                    // 单个文件直接下载
+                    const file = files[0];
+                    const blob = new Blob([file.content], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    renderFileList(files.map(f => f.name));
+                    showStatus(`成功生成 ${files.length} 个技能文件！`, 'success');
+                } else {
+                    // 多个文件生成ZIP包
+                    if (typeof JSZip === 'undefined') {
+                        // 如果没有JSZip，使用单个文件下载
+                        files.forEach(file => {
+                            const blob = new Blob([file.content], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = file.name;
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        });
+                        
+                        renderFileList(files.map(f => f.name));
+                        showStatus(`成功生成 ${files.length} 个技能文件！`, 'success');
+                    } else {
+                        const zip = new JSZip();
+                        files.forEach(file => {
+                            zip.file(file.name, file.content);
+                        });
+
+                        zip.generateAsync({ type: 'blob' }).then(blob => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${agentId}_skills.zip`;
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            
+                            renderFileList(files.map(f => f.name));
+                            showStatus(`成功生成 ${files.length} 个技能文件并打包为ZIP！`, 'success');
+                        });
+                    }
+                }
+            } catch (err) {
+                showStatus('生成文件失败：' + err.message, 'error');
+            }
+        });
+
+        function renderFileList(files) {
+            fileList.innerHTML = `
+                <h4>✅ 已生成的文件</h4>
+                ${files.map(fileName => `
+                    <div class="file-item">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">${fileName}</span>
+                        <span class="file-status">已下载</span>
+                    </div>
+                `).join('')}
+            `;
+            fileList.style.display = 'block';
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message ' + type;
+        }
+    </script>
+</body>
+</html>

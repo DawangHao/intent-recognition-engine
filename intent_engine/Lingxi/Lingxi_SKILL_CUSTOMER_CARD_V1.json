@@ -1,0 +1,23 @@
+{
+  "agent_id": "Lingxi",
+  "skill_id": "SKILL_CUSTOMER_CARD_V1",
+  "skill_description": "查询企业客户卡片，展示企业基本信息、标签和快速操作入口（存款、贷款、结算、访前一页纸）",
+  "trigger_keywords": [
+    "客户卡片",
+    "企业卡片",
+    "查看客户",
+    "查看企业",
+    "客户主页",
+    "企业主页",
+    "客户信息",
+    "企业信息"
+  ],
+  "slots": [
+    {
+      "slot_key": "target_company",
+      "entity_type": "UNKNOWN",
+      "is_required": true,
+      "clarify_prompt": "要查看的企业名称"
+    }
+  ]
+}

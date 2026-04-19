@@ -1,0 +1,25 @@
+{
+  "agent_id": "Lingxi",
+  "skill_id": "SKILL_LOAN_QUERY_V1",
+  "skill_description": "查询企业的贷款余额信息，包括贷款时点余额、贷款FTP净利润、预测所有银行贷款",
+  "trigger_keywords": [
+    "贷款",
+    "贷款余额",
+    "授信",
+    "贷款营收"
+  ],
+  "slots": [
+    {
+      "slot_key": "target_company",
+      "entity_type": "UNKNOWN",
+      "is_required": true,
+      "clarify_prompt": "要查询的企业名称"
+    },
+    {
+      "slot_key": "time_context",
+      "entity_type": "UNKNOWN",
+      "is_required": false,
+      "clarify_prompt": "查询时间范围"
+    }
+  ]
+}

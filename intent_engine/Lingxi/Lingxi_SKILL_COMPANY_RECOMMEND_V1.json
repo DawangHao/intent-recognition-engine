@@ -1,0 +1,13 @@
+{
+  "agent_id": "Lingxi",
+  "skill_id": "SKILL_COMPANY_RECOMMEND_V1",
+  "skill_description": "向用户推荐5个优质企业，包含企业基本信息和推荐理由",
+  "trigger_keywords": [
+    "推荐",
+    "企业推荐",
+    "好客推荐",
+    "营销推荐",
+    "客户推荐"
+  ],
+  "slots": []
+}

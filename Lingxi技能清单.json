@@ -1,0 +1,144 @@
+{
+  "version": "1.1",
+  "last_updated": "2026-04-08",
+  "description": "灵犀智能体技能清单",
+  "agent_id": "Lingxi",
+  "skills": [
+    {
+      "skill_id": "SKILL_DEPOSIT_QUERY_V1",
+      "skill_name": "查询存款",
+      "skill_description": "查询企业的存款余额信息，包括存款时点、存款年日均、存款FTP净利润、预测所有银行存款金额",
+      "trigger_keywords": ["存款", "余额", "存款余额", "日均存款", "存款年日均"],
+      "input_parameters": [
+        {
+          "name": "target_company",
+          "is_required": true,
+          "description": "要查询的企业名称"
+        },
+        {
+          "name": "time_context",
+          "is_required": false,
+          "description": "查询时间范围"
+        }
+      ],
+      "api_endpoint": "/api/deposit/query",
+      "presentation": "DEPOSIT_CARD"
+    },
+    {
+      "skill_id": "SKILL_LOAN_QUERY_V1",
+      "skill_name": "查询贷款",
+      "skill_description": "查询企业的贷款余额信息，包括贷款时点余额、贷款FTP净利润、预测所有银行贷款",
+      "trigger_keywords": ["贷款", "贷款余额", "授信", "贷款营收", "额度"],
+      "input_parameters": [
+        {
+          "name": "target_company",
+          "is_required": true,
+          "description": "要查询的企业名称"
+        },
+        {
+          "name": "time_context",
+          "is_required": false,
+          "description": "查询时间范围"
+        }
+      ],
+      "api_endpoint": "/api/loan/query",
+      "presentation": "LOAN_CARD"
+    },
+    {
+      "skill_id": "SKILL_VISIT_REPORT_V1",
+      "skill_name": "获取访前一页纸",
+      "skill_description": "下载企业的访前一页纸文档",
+      "trigger_keywords": ["访前一页纸", "一页纸", "访前", "访前报告"],
+      "input_parameters": [
+        {
+          "name": "target_company",
+          "is_required": true,
+          "description": "要查询的企业名称"
+        }
+      ],
+      "api_endpoint": "/api/visit-report/download",
+      "presentation": "VISIT_REPORT"
+    },
+    {
+      "skill_id": "SKILL_SETTLEMENT_QUERY_V1",
+      "skill_name": "查询结算分",
+      "skill_description": "查询企业的结算分信息，包括结算分、我行结算金额、预测所有银行结算金额",
+      "trigger_keywords": ["结算分", "结算", "结算金额", "结算归行率", "结算量"],
+      "input_parameters": [
+        {
+          "name": "target_company",
+          "is_required": true,
+          "description": "要查询的企业名称"
+        }
+      ],
+      "api_endpoint": "/api/settlement/query",
+      "presentation": "SETTLEMENT_CARD"
+    },
+    {
+      "skill_id": "SKILL_COMPANY_RECOMMEND_V1",
+      "skill_name": "好客推荐",
+      "skill_description": "向用户推荐5个优质企业，包含企业基本信息和推荐理由",
+      "trigger_keywords": ["推荐", "企业推荐", "好客推荐", "营销推荐", "客户推荐"],
+      "input_parameters": [],
+      "api_endpoint": "/api/recommend/companies",
+      "presentation": "COMPANY_RECOMMEND_CARD"
+    },
+    {
+      "skill_id": "SKILL_CUSTOMER_CARD_V1",
+      "skill_name": "客户卡片",
+      "skill_description": "查询企业客户卡片，展示企业基本信息、标签和快速操作入口（存款、贷款、结算、访前一页纸）",
+      "trigger_keywords": ["客户卡片", "企业卡片", "查看客户", "查看企业", "客户主页", "企业主页", "客户信息", "企业信息"],
+      "input_parameters": [
+        {
+          "name": "target_company",
+          "is_required": true,
+          "description": "要查询的企业名称"
+        }
+      ],
+      "api_endpoint": "/api/customer/card",
+      "presentation": "CUSTOMER_CARD"
+    }
+  ],
+  "update_guide": {
+    "when_to_update": [
+      "添加新技能时",
+      "删除现有技能时",
+      "修改技能参数时",
+      "修改技能API接口时",
+      "修改技能呈现形式时"
+    ],
+    "update_steps": [
+      "1. 在 intent_engine/ 目录下创建/更新对应的技能JSON文件（如 CXCK.json、CXDK.json、FQYYZ.json）",
+      "2. 更新 app_intent.json 文件，将新技能添加到 Lingxi 的 intent_name 列表中",
+      "3. 更新前端 frontend/lingxi/index_v2.html 中的 skillTable 对象",
+      "4. 更新本技能清单.json 文件，保持四个字段同步：skill_description、input_parameters、api_endpoint、presentation",
+      "5. 测试验证：确保新技能能被正确识别、参数提取、接口调用和结果呈现"
+    ],
+    "important_notes": [
+      "skill_id 必须与 intent_engine/ 目录下的技能JSON文件中的 skill_id 保持一致",
+      "input_parameters 必须与技能JSON文件中的 slots 字段保持一致（精简为name、is_required、description）",
+      "api_endpoint 必须与前端 skillTable 中的 apiEndpoint 保持一致",
+      "presentation 必须与前端 skillTable 中的 uiComponent 保持一致",
+      "建议同步更新四个地方：技能JSON文件、app_intent.json、前端skillTable、技能清单.json",
+      "每次更新后都需要进行完整测试，确保技能能正常工作"
+    ],
+    "checklist": {
+      "before_update": [
+        "确认 skill_id 的唯一性",
+        "确认 input_parameters 的完整性和准确性",
+        "确认 api_endpoint 的可用性",
+        "确认 presentation 的实现（如果需要新增UI组件）"
+      ],
+      "after_update": [
+        "验证技能JSON文件格式正确",
+        "验证 app_intent.json 已更新",
+        "验证前端 skillTable 已更新",
+        "验证技能清单.json 已更新",
+        "测试意图识别功能",
+        "测试参数提取功能",
+        "测试API调用功能",
+        "测试结果展示功能"
+      ]
+    }
+  }
+}
