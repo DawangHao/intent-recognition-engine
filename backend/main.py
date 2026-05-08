@@ -62,18 +62,30 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from schemas import IntentContext
 from core.pipeline import pipeline
 from config import config
 from api.data_query import router as data_query_router
 from api.visit_report import router as visit_report_router
 from api.companies import router as companies_router
+from log_manager import interaction_logger
+from intent_engine.step2_context import context_manager
 
 # 创建 FastAPI 应用
 app = FastAPI(
     title=config.APP_NAME,
     version=config.VERSION,
     description="银行意图识别引擎 API"
+)
+
+# 添加 CORS 中间件配置
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有 HTTP 头部
 )
 
 # 挂载静态文件
@@ -102,10 +114,56 @@ async def recognize_intent(context: IntentContext):
         result = pipeline.process(context)
         # 打印调试信息
         print(f"[API] LLM raw response: {result.llm_raw_response}")
+        
+        # 记录完整交互日志
+        interaction_logger.log_interaction(
+            user_id=context.user_id,
+            app_id=context.app_id,
+            session_id=context.session_id,
+            context=context,
+            result=result
+        )
+        
         # 直接返回result，让Pydantic自动处理序列化
         return result
     except Exception as e:
         print(f"[API] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/clear-conversation")
+async def clear_conversation(data: dict):
+    """清空对话缓存接口
+    
+    - **user_id**: 用户ID
+    - **app_id**: 应用ID
+    - **session_id**: 会话ID
+    """
+    try:
+        user_id = data.get('user_id', '')
+        app_id = data.get('app_id', '')
+        session_id = data.get('session_id', '')
+        
+        if not all([user_id, app_id, session_id]):
+            return {
+                "code": 400,
+                "message": "缺少必要参数：user_id, app_id, session_id"
+            }
+        
+        success = context_manager.clear_context(app_id, user_id, session_id)
+        
+        if success:
+            return {
+                "code": 200,
+                "message": "对话缓存已清空"
+            }
+        else:
+            return {
+                "code": 500,
+                "message": "清空对话缓存失败"
+            }
+    except Exception as e:
+        print(f"[API] Error clearing conversation: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

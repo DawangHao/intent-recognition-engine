@@ -158,9 +158,32 @@ class IntentContext(BaseModel):
     step1_duration: Optional[float] = None  # 安全围栏耗时
     step2_duration: Optional[float] = None  # 上下文加载耗时
     step3_duration: Optional[float] = None  # 实体提取耗时
-    step4_duration: Optional[float] = None  # 技能识别耗时
-    step5_duration: Optional[float] = None  # 任务分发耗时
-    step6_duration: Optional[float] = None  # 保存上下文耗时
+    step4_duration: Optional[float] = None  # query改写耗时
+    step5_duration: Optional[float] = None  # 意图识别核心耗时
+    step6_duration: Optional[float] = None  # 任务分发耗时
+    step7_duration: Optional[float] = None  # 保存上下文耗时
+    
+    # =========================================================
+    # Step4: Query 改写相关字段
+    # =========================================================
+    # Step4 发送给大模型的prompt原文
+    step4_prompt: Optional[str] = None
+    # Step4 大模型真实返回结果
+    step4_llm_raw_response: Optional[str] = None
+    # Step4 改写后的query
+    rewritten_query: Optional[str] = None
+    # Step4 输入信息（用于前端展示）
+    step4_input_info: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    
+    # =========================================================
+    # Step5: 意图识别核心相关字段
+    # =========================================================
+    # Step5 发送给大模型的prompt原文
+    step5_prompt: Optional[str] = None
+    # Step5 大模型真实返回结果
+    step5_llm_raw_response: Optional[Any] = None
+    # Step5 输入信息（用于前端展示）
+    step5_input_info: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     # ---------------------------------------------------------
     # 5. 动作建议 (Action Directive - 给Agent编排层的最终指令)

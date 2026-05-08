@@ -148,11 +148,24 @@ class ContextManager:
                 history_str = ""
                 # 取最近的三轮对话
                 start_idx = max(0, len(context_history) - 3)
+                total_turns = len(context_history)
                 for i in range(start_idx, len(context_history)):
                     turn = context_history[i]
                     # 将时间戳转换为时:分:秒格式
                     timestamp_str = time.strftime("%H:%M:%S", time.localtime(turn['timestamp']))
-                    history_str += f"第{i+1}轮对话（时间：{timestamp_str}）\n"
+                    # 计算当前是第几轮（从1开始）
+                    current_turn = i + 1
+                    # 计算相对于最近一轮的位置
+                    relative_turn = current_turn - (total_turns - 3)
+                    if relative_turn == 1:
+                        # 最远一轮
+                        history_str += f"第{current_turn}轮对话（时间：{timestamp_str}）（最远一轮，适当参考）\n"
+                    elif relative_turn == 3:
+                        # 最近一轮
+                        history_str += f"第{current_turn}轮对话（时间：{timestamp_str}）（最近一轮，可主要参考）\n"
+                    else:
+                        # 中间轮
+                        history_str += f"第{current_turn}轮对话（时间：{timestamp_str}）\n"
                     history_str += f"（1）用户输入：{turn['raw_query']}\n"
                     history_str += f"（2）返回用户：{turn['response_text']}\n\n"
                 
@@ -270,6 +283,34 @@ class ContextManager:
             print(f"[CONTEXT] Error saving context: {e}")
             # 容错处理，保存失败不影响主流程
             pass
+    
+    def clear_context(self, app_id: str, user_id: str, session_id: str) -> bool:
+        """清空对话缓存
+        
+        Args:
+            app_id (str): 应用ID
+            user_id (str): 用户ID
+            session_id (str): 会话ID
+            
+        Returns:
+            bool: 是否成功清空
+        """
+        try:
+            key = self._get_context_key(app_id, user_id, session_id)
+            print(f"[CONTEXT] Clearing context with key: {key}")
+            
+            # 从Redis中删除
+            deleted = self.redis_client.delete(key)
+            
+            # 同时从内存缓存中删除
+            if key in self.memory_cache:
+                del self.memory_cache[key]
+            
+            print(f"[CONTEXT] Context cleared successfully, deleted: {deleted}")
+            return True
+        except Exception as e:
+            print(f"[CONTEXT] Error clearing context: {e}")
+            return False
 
 
 # 导出实例

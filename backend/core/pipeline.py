@@ -60,8 +60,9 @@ from schemas import IntentContext
 from intent_engine.step1_guardrail import guardrail
 from intent_engine.step2_context import context_manager
 from intent_engine.step3_extractor import extract_entities
-from intent_engine.step4_intent_core import intent_core
-from intent_engine.step5_dispatcher import dispatcher
+from intent_engine.step4_query_rewrite import query_rewriter
+from intent_engine.step5_intent_core import intent_core
+from intent_engine.step6_dispatcher import dispatcher
 
 class Pipeline:
     """流水线类，负责协调执行各个意图识别步骤"""
@@ -104,27 +105,34 @@ class Pipeline:
             context.step3_duration = time.time() - start_time
             print(f"[PIPELINE] Ambiguous candidates: {context.ambiguous_candidates}")
             
-            # 4. 技能识别
-            print("[PIPELINE] Step 4: Skill recognition")
+            # 4. Query改写
+            print("[PIPELINE] Step 4: Query rewrite")
+            start_time = time.time()
+            context = query_rewriter.process(context)
+            context.step4_duration = time.time() - start_time
+            print(f"[PIPELINE] Rewritten query: {context.rewritten_query}")
+            
+            # 5. 意图识别核心
+            print("[PIPELINE] Step 5: Intent recognition core")
             start_time = time.time()
             context = intent_core.process(context)
-            context.step4_duration = time.time() - start_time
+            context.step5_duration = time.time() - start_time
             print(f"[PIPELINE] Skill result: {context.skill_id}, confidence: {context.confidence}")
             
-            # 5. 任务分发
-            print("[PIPELINE] Step 5: Dispatch")
+            # 6. 任务分发
+            print("[PIPELINE] Step 6: Dispatch")
             start_time = time.time()
             context = dispatcher.dispatch(context)
-            context.step5_duration = time.time() - start_time
+            context.step6_duration = time.time() - start_time
             
-            # 6. 保存上下文
-            print("[PIPELINE] Step 6: Save context")
+            # 7. 保存上下文
+            print("[PIPELINE] Step 7: Save context")
             start_time = time.time()
             # 如果请求中已经包含response_text，直接保存
             if hasattr(context, 'response_text') and context.response_text:
                 print(f"[PIPELINE] Saving context with response_text: {context.response_text}")
             context_manager.save_context(context)
-            context.step6_duration = time.time() - start_time
+            context.step7_duration = time.time() - start_time
             
         except Exception as e:
             # 全局容错处理

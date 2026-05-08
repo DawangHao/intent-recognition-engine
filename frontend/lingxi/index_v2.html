@@ -518,6 +518,63 @@
             cursor: not-allowed;
         }
         
+        /* 工具按钮样式 */
+        .tool-button {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #d9d9d9;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .tool-button:hover {
+            background-color: #f5f5f5;
+            border-color: #1890ff;
+        }
+        
+        /* 工具菜单样式 */
+        .tool-menu {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background-color: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 160px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .tool-menu.show {
+            display: block;
+        }
+        
+        .tool-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        
+        .tool-menu-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .tool-menu-item:first-child {
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+        
+        .tool-menu-item:last-child {
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+        
         .skill-buttons-panel {
             display: none;
             padding: 10px;
@@ -984,8 +1041,14 @@
                     </div>
                 </div>
                 <div class="pipeline-step">
-                    <div class="pipeline-step-header">Step 4: 意图识别</div>
+                    <div class="pipeline-step-header">Step 4: Query改写</div>
                     <div class="pipeline-step-content" id="step4Content">
+                        等待处理...
+                    </div>
+                </div>
+                <div class="pipeline-step">
+                    <div class="pipeline-step-header">Step 5: 意图识别核心</div>
+                    <div class="pipeline-step-content" id="step5Content">
                         等待处理...
                     </div>
                 </div>
@@ -1023,6 +1086,16 @@
                 </button>
                 <button class="stop-button" id="stopButton" disabled>
                     ⏹ 停止
+                </button>
+                <!-- 工具按钮 -->
+                <button class="tool-button" id="toolButton">
+                    ⚙️ 工具
+                    <!-- 工具菜单 -->
+                    <div class="tool-menu" id="toolMenu">
+                        <div class="tool-menu-item" id="clearConversationItem">
+                            🗑️ 清空对话缓存
+                        </div>
+                    </div>
                 </button>
             </div>
             
@@ -1086,6 +1159,12 @@
         const querySettlementButton = document.getElementById('querySettlementButton');
         const getVisitReportButton = document.getElementById('getVisitReportButton');
         const recommendCompaniesButton = document.getElementById('recommendCompaniesButton');
+        const customerCardButton = document.getElementById('customerCardButton');
+        
+        // 工具按钮相关元素
+        const toolButton = document.getElementById('toolButton');
+        const toolMenu = document.getElementById('toolMenu');
+        const clearConversationItem = document.getElementById('clearConversationItem');
         
         // 弹框相关元素
         const modalOverlay = document.getElementById('modalOverlay');
@@ -1098,6 +1177,11 @@
         // 当前选择的技能
         let currentSkill = null;
         let currentAbortController = null;
+        
+        // 用户信息
+        const userId = 'demo_user';
+        const appId = 'Lingxi';
+        const sessionId = 'demo_session';
         
         // 技能表 - 记录灵犀的技能清单及其对应的接口
         const skillTable = {
@@ -1227,6 +1311,54 @@
             currentSkill = 'customer-card';
             modalHeader.textContent = '查看企业客户卡片';
             showModal();
+        });
+        
+        // ==================== 工具按钮功能 ====================
+        
+        // 工具按钮点击 - 切换菜单显示
+        toolButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toolMenu.classList.toggle('show');
+        });
+        
+        // 清空对话缓存菜单项点击
+        clearConversationItem.addEventListener('click', async function(e) {
+            e.stopPropagation();
+            toolMenu.classList.remove('show');
+            
+            if (confirm('确定要清空对话缓存吗？')) {
+                try {
+                    const response = await fetch('http://localhost:8000/api/clear-conversation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            app_id: appId,
+                            session_id: sessionId
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.code === 200) {
+                        alert('对话缓存已清空');
+                    } else {
+                        alert('清空对话缓存失败：' + result.message);
+                    }
+                } catch (error) {
+                    console.error('清空对话缓存错误:', error);
+                    alert('清空对话缓存失败：' + error.message);
+                }
+            }
+        });
+        
+        // 点击外部关闭工具菜单
+        document.addEventListener('click', function(e) {
+            if (!toolButton.contains(e.target)) {
+                toolMenu.classList.remove('show');
+            }
         });
         
         // 显示弹框
@@ -2335,11 +2467,16 @@
                 </div>
             `;
             
+            // 转义文本中的标签
+            function escapeHtml(text) {
+                if (!text) return text;
+                return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+            
             document.getElementById('step3Content').innerHTML = step3Content;
             
-            // Step 4: 意图识别
+            // Step 4: Query改写
             const step4Duration = result.step4_duration || 0;
-            const step4Input = result.normalized_query ? result.normalized_query.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '';
             
             let step4Content = `
                 <div class="pipeline-step-row">
@@ -2348,59 +2485,92 @@
                 </div>
                 <div class="pipeline-step-row">
                     <div class="pipeline-step-label">输入信息：</div>
-                    <div class="pipeline-step-value">${step4Input}</div>
+                    <div class="pipeline-step-value">${escapeHtml(result.normalized_query) || escapeHtml(result.raw_query)}</div>
                 </div>
-            `;
-            
-            step4Content += `
                 <div class="pipeline-step-row">
                     <div class="pipeline-step-label">近三轮上下文信息：</div>
                     <div class="pipeline-step-value">
                         ${result.history_context ? 
-                            `<div style="background-color: #f5f5f5; padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap;">${result.history_context.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : 
+                            `<div style="background-color: #f5f5f5; padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap;">${escapeHtml(result.history_context)}</div>` : 
                             '无'}
                     </div>
                 </div>
                 <div class="pipeline-step-row">
-                    <div class="pipeline-step-label">query改写结果：</div>
-                    <div class="pipeline-step-value">${step4Input}</div>
-                </div>
-            `;
-            
-            step4Content += `
-                <div class="pipeline-step-row">
                     <div class="pipeline-step-label">调用大模型：</div>
-                    <div class="pipeline-step-value"><a href="#" style="color: #1890ff;">${result.model_name || '未知模型'}</a></div>
+                    <div class="pipeline-step-value">doubao-seed-2-0-mini-260215</div>
                 </div>
             `;
             
             // 添加发送给大模型的prompt原文
-            if (result.prompt) {
+            if (result.step4_prompt) {
                 step4Content += `
                     <div style="margin-top: 15px; font-weight: bold; color: #333;">发送给大模型的prompt原文：</div>
                     <div class="pipeline-step-row">
                         <div class="pipeline-step-label"></div>
                         <div class="pipeline-step-value">
                             <div class="json-content" style="margin-top:5px; white-space: pre-wrap; font-family: 'Courier New', monospace;">
-                                ${result.prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                                ${result.step4_prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                             </div>
                         </div>
                     </div>
                 `;
-            } else {
+            }
+            
+            // 添加大模型真实返回结果
+            if (result.step4_llm_raw_response) {
                 step4Content += `
+                    <div style="margin-top: 15px; font-weight: bold; color: #333;">大模型真实返回结果：</div>
+                    <div class="pipeline-step-row">
+                        <div class="pipeline-step-label">改写后的query：</div>
+                        <div class="pipeline-step-value">
+                            <div style="background-color: #f5f5f5; padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; white-space: pre-wrap;">
+                                ${escapeHtml(result.step4_llm_raw_response)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+
+            
+            document.getElementById('step4Content').innerHTML = step4Content;
+            
+            // Step 5: 意图识别核心
+            const step5Duration = result.step5_duration || 0;
+            const rewrittenQuery = result.rewritten_query || result.final_query || result.normalized_query || result.raw_query;
+            
+            let step5Content = `
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">耗时：</div>
+                    <div class="pipeline-step-value" style="color: red;">${step5Duration.toFixed(3)}秒</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">输入信息：</div>
+                    <div class="pipeline-step-value">${escapeHtml(rewrittenQuery)}</div>
+                </div>
+                <div class="pipeline-step-row">
+                    <div class="pipeline-step-label">调用大模型：</div>
+                    <div class="pipeline-step-value">doubao-seed-2-0-mini-260215</div>
+                </div>
+            `;
+            
+            // 添加发送给大模型的prompt原文
+            if (result.step5_prompt) {
+                step5Content += `
                     <div style="margin-top: 15px; font-weight: bold; color: #333;">发送给大模型的prompt原文：</div>
                     <div class="pipeline-step-row">
                         <div class="pipeline-step-label"></div>
-                        <div class="pipeline-step-value" style="color: #999;">
-                            无数据 (prompt为空)
+                        <div class="pipeline-step-value">
+                            <div class="json-content" style="margin-top:5px; white-space: pre-wrap; font-family: 'Courier New', monospace;">
+                                ${result.step5_prompt.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
                         </div>
                     </div>
                 `;
             }
             
             // 添加 LangFuse 追踪信息
-            step4Content += `
+            step5Content += `
                 <div style="margin-top: 15px; font-weight: bold; color: #333;">LangFuse 追踪信息：</div>
                 <div class="pipeline-step-row">
                     <div class="pipeline-step-label">可观测性：</div>
@@ -2413,51 +2583,42 @@
                 </div>
             `;
             
-            // 添加大模型真实返回结果（用于调试）
-            console.log('llm_raw_response:', result.llm_raw_response);
-            if (result.llm_raw_response && Object.keys(result.llm_raw_response).length > 0) {
-                step4Content += `
+            // 添加大模型真实返回结果
+            if (result.step5_llm_raw_response) {
+                step5Content += `
                     <div style="margin-top: 15px; font-weight: bold; color: #333;">大模型真实返回结果：</div>
                     <div class="pipeline-step-row">
                         <div class="pipeline-step-label">原始JSON：</div>
                         <div class="pipeline-step-value">
                             <div class="json-content" style="margin-top:5px;">
-                                ${JSON.stringify(result.llm_raw_response, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                                ${JSON.stringify(result.step5_llm_raw_response, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                             </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                step4Content += `
-                    <div style="margin-top: 15px; font-weight: bold; color: #333;">大模型真实返回结果：</div>
-                    <div class="pipeline-step-row">
-                        <div class="pipeline-step-label">原始JSON：</div>
-                        <div class="pipeline-step-value" style="color: #999;">
-                            无数据 (llm_raw_response为空)
                         </div>
                     </div>
                 `;
             }
             
-            step4Content += `
+            step5Content += `
                 <div style="margin-top: 15px; font-weight: bold; color: #333;">大模型匹配结果：</div>
             `;
             
             // 获取技能名称
-            let skillName = result.llm_raw_response?.intent || result.skill_id || '未知';
+            let skillName = result.skill_id || '未知';
+            let confidence = result.confidence || 0;
+            let action = result.action || '未知';
             
-            step4Content += `
+            step5Content += `
                 <div class="pipeline-step-row">
                     <div class="pipeline-step-label">匹配技能：</div>
-                    <div class="pipeline-step-value">${skillName} (${result.llm_raw_response?.intent || result.skill_id || '未知'})</div>
+                    <div class="pipeline-step-value">${skillName}</div>
                 </div>
                 <div class="pipeline-step-row">
                     <div class="pipeline-step-label">置信度：</div>
-                    <div class="pipeline-step-value">${result.llm_raw_response?.confidence ? result.llm_raw_response.confidence.toFixed(2) : result.confidence ? result.confidence.toFixed(2) : '无'} (${result.llm_raw_response?.confidence >= 0.8 ? '通过' : '未通过'})</div>
+                    <div class="pipeline-step-value">${confidence.toFixed(2)} (${confidence >= 0.8 ? '通过' : '未通过'})</div>
                 </div>
                 <div class="pipeline-step-row">
                     <div class="pipeline-step-label">行动建议：</div>
-                    <div class="pipeline-step-value">${result.llm_raw_response?.action || result.action || '未知'}</div>
+                    <div class="pipeline-step-value">${action}</div>
                 </div>
             `;
             
@@ -2466,7 +2627,7 @@
                 ? result.action_suggestions 
                 : result.action_suggestion;
             if (suggestionsToDisplay) {
-                step4Content += `
+                step5Content += `
                     <div style="margin-top: 15px; font-weight: bold; color: #333;">下发给灵犀的原文：</div>
                     <div class="pipeline-step-row">
                         <div class="pipeline-step-label"></div>
@@ -2479,7 +2640,7 @@
                 `;
             }
             
-            document.getElementById('step4Content').innerHTML = step4Content;
+            document.getElementById('step5Content').innerHTML = step5Content;
         }
         
         // ==================== 工具函数 ====================
@@ -2680,9 +2841,9 @@
                 // 步骤2：构建请求参数
                 const step2Start = performance.now();
                 const requestData = {
-                    user_id: 'test_user_001',
-                    app_id: 'Lingxi',
-                    session_id: 'session_001',
+                    user_id: userId,
+                    app_id: appId,
+                    session_id: sessionId,
                     raw_query: message
                 };
                 addStep('步骤2：构建请求参数', requestData, true, (step2Start - step1End) / 1000);
