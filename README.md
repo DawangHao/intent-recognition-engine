@@ -132,6 +132,10 @@ pytest --cov=backend --cov=intent_engine --html=report.html
 
 ## 📚 核心功能
 
+### 场景能力全景图
+
+![场景能力全景图](images/ScreenShot_2026-05-08_083800_517.png)
+
 ### 意图识别流程
 
 ```
